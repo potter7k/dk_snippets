@@ -1,0 +1,93 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+
+* {
+  box-sizing: border-box;
+  user-select: none;
+  outline: none;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: "Inter", serif;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.defaultNotify {
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  background-size: cover;
+  box-sizing: border-box;
+  font-family: "Inter", serif;
+  user-select: none;
+  outline: none;
+  width: 100%;
+  height: 100%;
+  color: white;
+}
+
+.defaultNotify .defaultNotifySide {
+  position: absolute;
+  text-overflow: ellipsis;
+  top: 5vh;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  overflow: hidden;
+}
+
+.defaultNotify .currentNotify {
+  position: relative;
+  margin-top: 2vh;
+  border-radius: 0.5vw;
+  display: flex;
+  align-items: center;
+  background: rgba(51, 51, 51, 0.938); /* Cor de fundo com transparência */
+  /* backdrop-filter: blur(10px); */
+  padding: 4% 3.5%;
+  color: white;
+  width: auto;
+  max-width: 30vw;
+  min-width: 18vw;
+  margin-bottom: 0;
+  margin-right: 0.5vw;
+}
+
+.defaultNotify .currentNotify .notifyLeftSide {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-right: 10px;
+}
+
+.defaultNotify .currentNotify .notifyLeftSide img {
+  width: 25px;
+  height: 25px;
+}
+
+.defaultNotify .currentNotify .notifyRightSide {
+  display: flex;
+  flex-direction: column;
+}
+
+.defaultNotify .currentNotify .notifyRightSide h1 {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: bolder;
+}
+
+.defaultNotify .currentNotify .notifyRightSide p {
+  margin: 0;
+  font-weight: 100;
+  font-size: 0.8rem;
+}
