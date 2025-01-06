@@ -41,7 +41,7 @@ end
 function JSON:set(datas)
     Ensure(datas, {"table"})
 
-    SaveResourceFile(self.target.dir, self.target.path..".json", json.encode(datas), -1)
+    SaveResourceFile(self.target.dir, self.target.path..".json", json.encode(datas, {indent = true}), -1)
 end
 
 --- Filter data based on criteria.
