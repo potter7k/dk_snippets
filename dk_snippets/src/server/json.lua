@@ -15,7 +15,13 @@ function JSON:fetch(filePath)
         dir = GetCurrentResourceName(),
         path = filePath
     }
-    obj.datas = json.decode(LoadResourceFile(obj.target.dir, obj.target.path..".json")) or {}
+
+    local resFile = LoadResourceFile(obj.target.dir, obj.target.path..".json")
+    if type(resFile) ~= "string" then
+        error("Erro ao carregar JSON, arquivo "..obj.target.path.." não encontrado.")
+    end
+
+    obj.datas = json.decode(resFile) or {}
 
     -- Initialize nextId with the highest existing ID + 1
     table.forEach(obj.datas, function(records, key)
