@@ -1,4 +1,4 @@
-FW:set("vrp.vrp", function()
+FW:set("vrp.vrpex", function()
     local funcs = {}
 
     --- Retornar a lista de usuários
