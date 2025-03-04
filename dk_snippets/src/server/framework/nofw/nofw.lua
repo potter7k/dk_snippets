@@ -13,8 +13,8 @@ FW:set("_nofw", function()
     end
 
     function funcs.isAdmin(source)
-        return IsPlayerAceAllowed(source, "admin")
+        return IsPlayerAceAllowed(source, "group.admin")
     end
 
-    return nil, funcs
+    return "_nofw", funcs
 end)
