@@ -1,9 +1,10 @@
-local supportedFrameworks = {
-    vrp = function() return FW:get("vrp") end
-}
-
 FW = {
     list = {},
+}
+
+local supportedFrameworks = {
+    vrp = function() return FW:get("vrp") end,
+    es_extended = function() return FW:get("esx") end
 }
 
 function FW:set(name, func)
