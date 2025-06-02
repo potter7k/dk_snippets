@@ -21,6 +21,38 @@ function ParseInt(v)
 	end
 end
 
+--- Função para criar classes com metatable
+---@param defaults table
+---@return table
+function Class(defaults)
+    local class = {}
+
+    for key, value in pairs(defaults or {}) do
+        class[key] = value
+    end
+
+    class.__index = class
+
+    function class:new(...)
+        local obj = setmetatable({}, self)
+
+        for key, value in pairs(self) do
+            if key ~= "__index" and key ~= "new" and type(value) ~= "function" then
+                obj[key] = value
+            end
+        end
+
+        -- Chama o construtor se existir
+        if obj.constructor then
+            obj:constructor(...)
+        end
+
+        return obj
+    end
+
+    return class
+end
+
 local sanitize_tmp = {}
 
 --- Sanitize a string based on allowed or disallowed characters.

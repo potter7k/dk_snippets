@@ -1,4 +1,15 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+@import "./requests.css";
+
+:root {
+    --gradient-background: linear-gradient(
+    135deg, 
+    #1a1a1a 0%,
+    #2d2d2d 25%,
+    #1e1e1e 50%,
+    #252525 75%,
+    #1a1a1a 100%);
+}
 
 * {
   box-sizing: border-box;
@@ -33,6 +44,7 @@ body {
   width: 100%;
   height: 100%;
   color: white;
+  position: absolute;
 }
 
 .defaultNotify .defaultNotifySide {
@@ -52,7 +64,7 @@ body {
   border-radius: 0.5vw;
   display: flex;
   align-items: center;
-  background: rgba(51, 51, 51, 0.938); /* Cor de fundo com transparência */
+  background: var(--gradient-background); /* Cor de fundo com transparência */
   /* backdrop-filter: blur(10px); */
   padding: 4% 3.5%;
   color: white;

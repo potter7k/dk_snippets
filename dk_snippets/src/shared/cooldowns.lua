@@ -1,17 +1,14 @@
 ---@class Cooldown
-Cooldown = {}
-Cooldown.__index = Cooldown
+Cooldown = Class({
+    defaultTimer = 0,
+    timer = 0
+})
 
---- Create a cooldown class.
+--- Create a constructor.
 ---@param timer integer|nil
----@return Cooldown
-function Cooldown:new(timer)
-    local obj = setmetatable({}, self)
-
-    obj.defaultTimer = (timer or 0) * 1000
-    obj.timer = 0
-
-    return obj
+function Cooldown:constructor(timer)
+    self.defaultTimer = (timer or 0) * 1000
+    self.timer = 0
 end
 
 --- Start a cooldown.

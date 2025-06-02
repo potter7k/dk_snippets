@@ -1,3 +1,5 @@
+import RequestHandler from "./request-handler.js";
+
 function defaultNotify(item) {
   let data = item.notify;
   let images = {
@@ -43,12 +45,45 @@ function defaultNotify(item) {
   }, time);
 }
 
+let requests = new Map();
+
+function handleRequest(data) {
+  if (data.new) {
+    const request = new RequestHandler(
+      data.params.id,
+      data.params.title,
+      data.params.timer,
+      data.params.description
+    );
+    
+    requests.set(request.getId(), request);
+
+    request.show();
+  } else if (data.response) {
+    const request = requests.get(data.params.id);
+    if (data.response === "accept") {
+      request.onAccept();
+    } else {
+      request.onDeny();
+    }
+  }
+}
+
 $(document).ready(function () {
   window.addEventListener("message", function (event) {
-    let item = event.data;
+    let data = event.data;
 
-    if (item.notify) {
-      defaultNotify(item);
+    if (data.request) {
+      handleRequest(data);
+      return;
+    }
+
+    if (data.notify) {
+      defaultNotify(data);
     }
   });
 });
+
+export async function sendClient(name, data, fn) {
+	return $.post("http://dk_snippets/" + name, JSON.stringify(data), fn);
+}
