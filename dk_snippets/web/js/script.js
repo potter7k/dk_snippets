@@ -53,7 +53,9 @@ function handleRequest(data) {
       data.params.id,
       data.params.title,
       data.params.timer,
-      data.params.description
+      data.params.description,
+      data.params.acceptText,
+      data.params.denyText
     );
     
     requests.set(request.getId(), request);

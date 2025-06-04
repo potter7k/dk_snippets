@@ -8,17 +8,22 @@ export default class RequestHandler {
     #timer;
     #description;
 
+    #acceptText;
+    #denyText;
+
     #timerDiv;
     #mainDiv;
     #acceptButton;
     #denyButton;
     #requestInterval;
 
-    constructor(id, title, timer, description) {
+    constructor(id, title, timer, description, acceptText, denyText) {
         this.#id = id;
         this.#title = title;
         this.#timer = timer;
         this.#description = description;
+        this.#acceptText = acceptText ?? "Aceitar (Y)";
+        this.#denyText = denyText ?? "Recusar (U)";
     }
 
     show() {
@@ -86,14 +91,14 @@ export default class RequestHandler {
         header.append(h1, h2);
 
         const descriptionDiv = $('<div>').addClass('requests__container__description');
-        const p = $('<p>').text(this.#description);
+        const p = $('<p>').html(this.#description);
         descriptionDiv.append(p);
 
         const buttonsDiv = $('<div>').addClass('requests__container__buttons');
         this.#denyButton = $('<button>')
             .attr('type', 'button')
             .attr('id', 'request-deny')
-            .text('Recusar (U)');
+            .text(this.#denyText);
         
         this.#denyButton.click((event) => {
             event.preventDefault();
@@ -103,7 +108,7 @@ export default class RequestHandler {
         this.#acceptButton = $('<button>')
             .attr('type', 'button')
             .attr('id', 'request-accept')
-            .text('Aceitar (Y)');
+            .text(this.#acceptText);
 
         this.#acceptButton.click((event) => {
             event.preventDefault();

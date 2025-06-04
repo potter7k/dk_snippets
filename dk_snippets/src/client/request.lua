@@ -3,7 +3,7 @@ local active = {}
 
 ---Retorna o resultado do request
 ---@return boolean
-local function loadRequest(description, timer)
+local function loadRequest(description, timer, acceptText, denyText)
     local currentId = #active + 1
     table.insert(active, currentId)
 
@@ -15,6 +15,8 @@ local function loadRequest(description, timer)
             title = "Solicitação",
             description = description,
             timer = timer or 20,
+            acceptText = acceptText,
+            denyText = denyText
         }
     })
 

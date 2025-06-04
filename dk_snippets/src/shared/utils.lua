@@ -9,6 +9,13 @@ function DkNotify(...)
 	end
 end
 
+---Request function. Prompts the user to confirm whether they want to perform a specific action. Returns `true` if the user agrees, `false` otherwise.
+---@param ... any
+---@return boolean
+function DkRequest(...)
+	return exports["dk_snippets"]:request(...)
+end
+
 --- Parse a value to an integer.
 ---@param v any
 ---@return integer

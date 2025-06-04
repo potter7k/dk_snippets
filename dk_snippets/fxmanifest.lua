@@ -4,7 +4,7 @@ game 'gta5'
 author 'potter7k'
 description 'Scripts desenvolvidos por DK Development. Discord: https://discord.gg/NJjUn8Ad3P'
 
-version '1.1.0'
+version '1.2.0'
 
 ui_page 'web/index.html'
 

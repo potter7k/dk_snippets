@@ -74,7 +74,6 @@ if IS_SERVER then
 
 	_G.TriggerClientCallback = function(source, eventName, args, eventCallback, timeout, timedout)
 		ensure(source, 'string', 'number'); ensure(eventName, 'string'); ensure(args, 'table', 'nil'); ensure(timeout, 'number', 'nil'); ensure(timedout, 'function', 'nil'); ensure(eventCallback, 'function', 'nil')
-
 		if tonumber(source) >= 0 then
 			local ticket = tostring(source) .. 'x' .. tostring(GetGameTimer())
 			local prom = promise.new()
