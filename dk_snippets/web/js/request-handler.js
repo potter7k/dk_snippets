@@ -17,6 +17,14 @@ export default class RequestHandler {
     #denyButton;
     #requestInterval;
 
+    /**
+    * @param {string} id - The unique identifier for the request.
+    * @param {string} title - The title of the request.
+    * @param {number} timer - The duration of the request in seconds.
+    * @param {string} description - The description of the request.
+    * @param {string} acceptText - The text for the accept button.
+    * @param {string} denyText - The text for the deny button.
+    */
     constructor(id, title, timer, description, acceptText, denyText) {
         this.#id = id;
         this.#title = title;
@@ -26,6 +34,9 @@ export default class RequestHandler {
         this.#denyText = denyText ?? "Recusar (U)";
     }
 
+    /**
+     * Displays the request UI.
+     */
     show() {
         const $main = this.#createDiv();
         $requests.append($main);
@@ -44,6 +55,9 @@ export default class RequestHandler {
         }, 1000);
     }
 
+    /**
+     * Closes the request UI.
+     */
     close() {
         this.#mainDiv.removeClass("animate_fade_in_grow");
         this.#mainDiv.addClass("animate_fade_out_grow");
@@ -54,6 +68,9 @@ export default class RequestHandler {
         });
     }
 
+    /**
+     * Handles the accept action.
+     */
     onAccept() {
         if (this.#acceptButton) {
             this.#acceptButton.addClass('hover-effect');
@@ -67,6 +84,9 @@ export default class RequestHandler {
         this.close();
     }
 
+    /**
+     * Handles the deny action.
+     */
     onDeny() {
         if (this.#denyButton) {
             this.#denyButton.addClass('hover-effect');
@@ -80,6 +100,10 @@ export default class RequestHandler {
         this.close();
     }
 
+    /**
+     * Creates the main request div.
+     * @returns {jQuery} The jQuery element representing the request UI.
+     */
     #createDiv() {
         this.#mainDiv = $('<main>').addClass('requests__container animate_fade_in_grow');
 
@@ -122,6 +146,9 @@ export default class RequestHandler {
         return this.#mainDiv;
     }
 
+    /**
+     * Decreases the timer by 1 second.
+     */
     decreaseTimer() {
         if (this.#timer > 0) {
             this.#timer = this.#timer - 1;
@@ -129,14 +156,26 @@ export default class RequestHandler {
         }
     }
 
+    /**
+     * Checks if the request has finished.
+     * @returns {boolean} True if the request has finished, false otherwise.
+     */
     hasFinished() {
         return this.#timer <= 0;
     }
 
+    /**
+     * Gets the current timer value.
+     * @returns {number} The current timer value in seconds.
+     */
     getTimer() {
         return this.#timer;
     }
 
+    /**
+     * Gets the request ID.
+     * @returns {string} The request ID.
+     */
     getId() {
         return this.#id;
     }

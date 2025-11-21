@@ -1,3 +1,4 @@
+import HintsHandler from "./hints-handler.js";
 import RequestHandler from "./request-handler.js";
 
 function defaultNotify(item) {
@@ -71,9 +72,32 @@ function handleRequest(data) {
   }
 }
 
+const hints = new Map();
+
+function handleHint(data) {
+  const hintData = data.hint;
+  const action = hintData.action;
+  const id = hintData.id;
+
+  if (action === "create") {
+    const hint = new HintsHandler($("#hints"));
+    hint.create(hintData.description, hintData.control, hintData.configs);
+    hints.set(id, hint);
+  } else if (action === "remove") {
+    const hint = hints.get(id);
+    hint.remove();
+    hints.delete(id);
+  }
+}
+
 $(document).ready(function () {
   window.addEventListener("message", function (event) {
     let data = event.data;
+
+    if (data.hint) {
+      handleHint(data);
+      return;
+    }
 
     if (data.request) {
       handleRequest(data);

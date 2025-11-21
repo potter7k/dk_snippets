@@ -16,6 +16,16 @@ function DkRequest(...)
 	return exports["dk_snippets"]:request(...)
 end
 
+--- Hint function to display hints on both client and server sides.
+---@param ... any
+function DkHint(...)
+	if IsDuplicityVersion() then
+		TriggerClientEvent("dk/hint", ...)
+	else
+		TriggerEvent("dk/hint", ...)
+	end
+end
+
 --- Parse a value to an integer.
 ---@param v any
 ---@return integer
@@ -134,6 +144,15 @@ function Join(tbl, str)
     return result
 end
 
+--- Round a number to a specified number of decimal places.
+---@param value number The number to round.
+---@param decimals integer The number of decimal places to keep.
+---@return number The rounded number.
+function Round(value, decimals)
+    local factor = 10 ^ (decimals or 0)
+    return math.floor(value * factor) / factor
+end
+
 function Ensure(obj, expected, errMessage)
     local objtype = type(obj)
     local errorMess = errMessage or 'expected %s, but got %s'
@@ -178,8 +197,8 @@ end
 
 --- Dump the content of a variable in a readable format.
 ---@param value any
----@param depth integer
----@param key any
+---@param depth? integer
+---@param key? any
 function Dump(value, depth, key)
     local linePrefix = ""
     local spaces = ""
@@ -275,6 +294,38 @@ function table.find(self, func, keepIndex)
 			end
 		end
 	end
+	return ret
+end
+
+--- Extract a slice of a table from a start index to an end index.
+---@param self table
+---@param startIndex integer
+---@param endIndex? integer
+---@return table
+function table.slice(self, startIndex, endIndex)
+	local ret = {}
+	local length = #self
+
+	startIndex = startIndex or 1
+	endIndex = endIndex or length
+
+	if startIndex < 0 then
+		startIndex = length + startIndex + 1
+	end
+
+	if endIndex < 0 then
+		endIndex = length + endIndex + 1
+
+	elseif endIndex > length then
+		endIndex = length
+	end
+
+	for i = startIndex, endIndex do
+		if self[i] ~= nil then
+			table.insert(ret, self[i])
+		end
+	end
+
 	return ret
 end
 

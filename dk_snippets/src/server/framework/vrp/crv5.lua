@@ -64,6 +64,30 @@ FW:set("vrp.crv5", function()
             ---@param amount integer
             giveBank = function(amount)
                 vRP.addBank(user_id,amount,"Private")
+            end,
+
+            --- Pegar quantidade de um item
+            --- @param item string
+            --- @return integer
+            itemAmount = function(item)
+                return vRP.itemAmount(user_id, item) or 0
+            end,
+
+            --- Remover item do inventário
+            --- @param item string
+            --- @param amount integer
+            --- @param notify boolean
+            --- @return boolean
+            takeItem = function(item, amount, notify)
+                return vRP.tryGetInventoryItem(user_id, item, amount, notify)
+            end,
+
+            --- Adicionar item ao inventário
+            --- @param item string
+            --- @param amount integer
+            --- @param notify boolean
+            giveItem = function(item, amount, notify)
+                vRP.generateItem(user_id, item, amount, notify)
             end
         }
     end
@@ -79,6 +103,13 @@ FW:set("vrp.crv5", function()
         return {
             online = false
         }
+    end
+
+    ---Pegar players por permissão
+    ---@param perm string
+    ---@return table
+    function funcs.getPlayersByPermission(perm)
+        return vRP.numPermission(perm) or {}
     end
 
     return funcs

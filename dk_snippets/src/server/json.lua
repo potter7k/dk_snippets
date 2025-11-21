@@ -74,11 +74,14 @@ end
 ---@param key string The key to insert into.
 ---@param data table The data to be inserted.
 ---@return table
-function JSON:insert(key, data)
+function JSON:insert(key, data, ignoreId)
     if not self.datas[key] then
         self.datas[key] = {}
+        if not ignoreId then
+            self.nextId[key] = 1
+        end
     end
-    if not data.id and self.nextId[key] then
+    if not data.id and self.nextId[key] and not ignoreId then
         data.id = self.nextId[key]
         self.nextId[key] = self.nextId[key] + 1
     end

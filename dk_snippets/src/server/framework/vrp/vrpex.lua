@@ -64,6 +64,30 @@ FW:set("vrp.vrpex", function()
             ---@param amount integer
             giveBank = function(amount)
                 vRP.giveBankMoney(user_id,amount)
+            end,
+
+            --- Pegar quantidade de um item
+            --- @param item string
+            --- @return integer
+            itemAmount = function(item)
+                return vRP.getInventoryItemAmount(user_id, item) or 0
+            end,
+
+            --- Remover item do inventário
+            --- @param item string
+            --- @param amount integer
+            --- @param notify boolean
+            --- @return boolean
+            takeItem = function(item, amount, notify)
+                return vRP.tryGetInventoryItem(user_id, item, amount, notify)
+            end,
+
+            --- Gerar item no inventário
+            --- @param item string
+            --- @param amount integer
+            --- @param notify boolean
+            generateItem = function(item, amount, notify)
+                vRP.giveInventoryItem(user_id, item, amount, notify)
             end
         }
     end
@@ -79,6 +103,18 @@ FW:set("vrp.vrpex", function()
         return {
             online = false
         }
+    end
+
+    ---Pegar players por permissão
+    ---@param perm string
+    ---@return table 
+    function funcs.getPlayersByPermission(perm)
+        local players = {}
+        local list = vRP.getUsersByPermission(perm) or {}
+        for _, id in pairs(list) do
+            table.insert(players, userSource(id))
+        end
+        return players
     end
 
     return funcs
