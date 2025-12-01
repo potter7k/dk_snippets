@@ -86,7 +86,7 @@ FW:set("vrp.vrpex", function()
             --- @param item string
             --- @param amount integer
             --- @param notify boolean
-            generateItem = function(item, amount, notify)
+            giveItem = function(item, amount, notify)
                 vRP.giveInventoryItem(user_id, item, amount, notify)
             end
         }

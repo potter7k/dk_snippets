@@ -90,7 +90,7 @@ FW:set("vrp.crnetwork", function()
             --- @param item string
             --- @param amount integer
             --- @param notify boolean
-            generateItem = function(item, amount, notify)
+            giveItem = function(item, amount, notify)
                 vRP.GenerateItem(user_id, item, amount, notify)
             end
         }

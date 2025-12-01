@@ -1,359 +1,752 @@
-## Callback System for FiveM
+# 🔄 Documentação Shared (Client & Server)
 
-The callback system simplifies the process of calling functions across the client-server boundary. It includes utilities to:
-- Register server-side callbacks that can be triggered by clients.
-- Register client-side callbacks that can be triggered by the server.
-- Handle timeout scenarios to ensure reliable operations.
+Esta documentação detalha todas as funcionalidades compartilhadas disponíveis tanto no cliente quanto no servidor.
 
-## License
+## 📋 Índice
 
-This callback system is based on the implementation by [PiterMcFlebor](https://github.com/pitermcflebor/pmc-callbacks) and is provided under the MIT License. The full license text can be found in the source code.
-
-## Features
-
-- **Server-side callbacks**: Allow clients to request data or execute server logic.
-- **Client-side callbacks**: Enable the server to call client-side logic.
-- **Timeout management**: Handle scenarios where a callback response might not arrive in time.
-- **Error handling**: Ensure type safety and proper use of arguments.
+- [Callbacks System](#-callbacks-system)
+- [Cooldown Manager](#-cooldown-manager)
+- [Utility Functions](#-utility-functions)
+- [Table Extensions](#-table-extensions)
 
 ---
 
-## Implementation Details
+## 📡 Callbacks System
 
-### Server-Side Functions
+Sistema robusto de callbacks para comunicação bidirecional entre client e server com suporte a timeout.
 
-#### `RegisterServerCallback(eventName, eventCallback)`
-**Description**: Registers a callback function on the server that can be triggered by the client.
+### Licença
 
-**Parameters:**
-- `eventName` (string): The name of the event.
-- `eventCallback` (function): The function to execute when the event is triggered.
+Baseado na implementação de [PiterMcFlebor](https://github.com/pitermcflebor/pmc-callbacks) sob licença MIT.
 
-**Usage Example:**
+---
+
+### Funções Server-Side
+
+#### `RegisterServerCallback(eventName, callback)`
+
+Registra um callback no servidor que pode ser chamado pelo cliente.
+
+**Parâmetros:**
+| Parâmetro | Tipo | Descrição |
+|-----------|------|-----------|
+| `eventName` | string | Nome único do evento |
+| `callback` | function | Função a ser executada |
+
+**Exemplo:**
 ```lua
-RegisterServerCallback('getVehName', function(source, vehId)
-    local vehNames = {
-        [1] = "abc",
-        [2] = "def"
+RegisterServerCallback('getVehicleName', function(source, vehId)
+    local vehicleNames = {
+        [1] = "Sultan",
+        [2] = "Adder",
+        [3] = "Zentorno"
     }
+    return vehicleNames[vehId] or "Unknown"
+end)
 
-    return vehNames[vehId]
+-- Com lógica de banco de dados
+RegisterServerCallback('getUserData', function(source)
+    local user = FW.getPlayer(source)
+    if not user then return nil end
+    
+    local user_id = user.userId()
+    local db = exports["dk_snippets"]:DB()
+    
+    local userData = db.execute("SELECT * FROM users WHERE id = ?", {user_id})[1]
+    return {
+        name = userData.name,
+        money = userData.money,
+        bank = userData.bank
+    }
 end)
 ```
 
-#### `TriggerServerCallback(eventName, args, eventCallback, timeout, timedout)`
-**Description**: Triggers a server-side callback from the client.
+---
 
-**Parameters:**
-- `eventName` (string): The name of the event.
-- `args` (table, optional): Arguments to pass to the callback.
-- `eventCallback` (function, optional): Function to handle the callback result.
-- `timeout` (number, optional): Timeout in seconds.
-- `timedout` (function, optional): Function to handle timeout scenarios.
+#### `TriggerClientCallback(source, eventName, args, callback, timeout, timedout)`
 
-**Usage Example:**
+Dispara um callback no cliente a partir do servidor.
+
+**Parâmetros:**
+| Parâmetro | Tipo | Descrição | Obrigatório |
+|-----------|------|-----------|-------------|
+| `source` | number | ID do jogador | ✅ |
+| `eventName` | string | Nome do callback client | ✅ |
+| `args` | table | Argumentos a passar | ❌ |
+| `callback` | function | Função para processar resposta | ❌ |
+| `timeout` | number | Timeout em segundos | ❌ (padrão: 30) |
+| `timedout` | function | Função se der timeout | ❌ |
+
+**Exemplos:**
 ```lua
-local vehName = TriggerServerCallback('getVehName', {
-    2
-})
+-- Obter posição do jogador
+TriggerClientCallback(source, 'getPlayerCoords', {}, function(coords)
+    print("Jogador está em: " .. coords.x .. ", " .. coords.y .. ", " .. coords.z)
+end)
 
-print(vehName) -- "def"
+-- Com timeout customizado
+TriggerClientCallback(source, 'confirmAction', {action = "delete_character"}, 
+    function(confirmed)
+        if confirmed then
+            -- Executar ação
+        end
+    end,
+    15,  -- 15 segundos de timeout
+    function()
+        print("Jogador não respondeu a tempo")
+    end
+)
+
+-- Verificar se jogador está em veículo
+TriggerClientCallback(source, 'isInVehicle', {}, function(inVehicle, vehicleModel)
+    if inVehicle then
+        print("Jogador está em: " .. vehicleModel)
+    end
+end)
 ```
+
+---
 
 #### `UnregisterServerCallback(eventData)`
-**Description**: Unregisters a server callback to free up resources.
 
-**Parameters:**
-- `eventData`: The event handler returned by `RegisterServerCallback`.
+Remove um callback do servidor.
 
-#### `TriggerClientCallback(source, eventName, args, eventCallback, timeout, timedout)`
-**Description**: Triggers a client-side callback from the server.
-
-**Parameters:**
-- `source` (number|string): The client ID.
-- `eventName` (string): The name of the event.
-- `args` (table, optional): Arguments to pass to the callback.
-- `eventCallback` (function, optional): Function to handle the callback result.
-- `timeout` (number, optional): Timeout in seconds.
-- `timedout` (function, optional): Function to handle timeout scenarios.
-
-**Usage Example:**
+**Exemplo:**
 ```lua
-TriggerClientCallback(1, 'getPlayerInput', {prompt = "Enter your name"}, function(response)
-    print("Player input:", response)
-end, 10, function()
-    print("Player did not respond in time.")
+local callback = RegisterServerCallback('tempEvent', function(source)
+    return "data"
+end)
+
+-- Depois de usar, desregistrar
+UnregisterServerCallback(callback)
+```
+
+---
+
+### Funções Client-Side
+
+#### `RegisterClientCallback(eventName, callback)`
+
+Registra um callback no cliente que pode ser chamado pelo servidor.
+
+**Parâmetros:**
+| Parâmetro | Tipo | Descrição |
+|-----------|------|-----------|
+| `eventName` | string | Nome único do evento |
+| `callback` | function | Função a ser executada |
+
+**Exemplos:**
+```lua
+-- Callback simples
+RegisterClientCallback('getPlayerCoords', function()
+    local ped = PlayerPedId()
+    local coords = GetEntityCoords(ped)
+    return {
+        x = coords.x,
+        y = coords.y,
+        z = coords.z
+    }
+end)
+
+-- Callback com lógica
+RegisterClientCallback('isInVehicle', function()
+    local ped = PlayerPedId()
+    local vehicle = GetVehiclePedIsIn(ped, false)
+    
+    if vehicle ~= 0 then
+        local model = GetEntityModel(vehicle)
+        return true, GetDisplayNameFromVehicleModel(model)
+    end
+    
+    return false, nil
+end)
+
+-- Callback que retorna dados complexos
+RegisterClientCallback('getVehicleInfo', function()
+    local ped = PlayerPedId()
+    local vehicle = GetVehiclePedIsIn(ped, false)
+    
+    if vehicle ~= 0 then
+        return {
+            model = GetEntityModel(vehicle),
+            plate = GetVehicleNumberPlateText(vehicle),
+            health = GetVehicleEngineHealth(vehicle),
+            fuel = GetVehicleFuelLevel(vehicle)
+        }
+    end
+    
+    return nil
 end)
 ```
 
-### Client-Side Functions
+---
 
-#### `RegisterClientCallback(eventName, eventCallback)`
-**Description**: Registers a callback function on the client that can be triggered by the server.
+#### `TriggerServerCallback(eventName, args, callback, timeout, timedout)`
 
-**Parameters:**
-- `eventName` (string): The name of the event.
-- `eventCallback` (function): The function to execute when the event is triggered.
+Chama um callback do servidor a partir do cliente.
 
-**Usage Example:**
+**Parâmetros:**
+| Parâmetro | Tipo | Descrição | Obrigatório |
+|-----------|------|-----------|-------------|
+| `eventName` | string | Nome do callback server | ✅ |
+| `args` | table | Argumentos a passar | ❌ |
+| `callback` | function | Função para processar resposta | ❌ |
+| `timeout` | number | Timeout em segundos | ❌ (padrão: 30) |
+| `timedout` | function | Função se der timeout | ❌ |
+
+**Exemplos:**
 ```lua
-RegisterClientCallback('displayNotification', function(message)
-    ShowNotification(message)
-    return true
+-- Uso síncrono (aguarda resposta)
+local money = TriggerServerCallback('getPlayerMoney', {})
+print("Seu dinheiro: $" .. money)
+
+-- Uso com callback assíncrono
+TriggerServerCallback('buyItem', {itemId = 123, amount = 5}, function(success, message)
+    if success then
+        DkNotify("green", message, 5000)
+    else
+        DkNotify("red", message, 5000)
+    end
+end)
+
+-- Com timeout
+local data = TriggerServerCallback('heavyOperation', {}, nil, 60, function()
+    DkNotify("red", "Operação demorou muito tempo", 5000)
 end)
 ```
+
+---
 
 #### `UnregisterClientCallback(eventData)`
-**Description**: Unregisters a client callback to free up resources.
 
-**Parameters:**
-- `eventData`: The event handler returned by `RegisterClientCallback`.
+Remove um callback do cliente.
+
+**Exemplo:**
+```lua
+local callback = RegisterClientCallback('tempEvent', function()
+    return "data"
+end)
+
+UnregisterClientCallback(callback)
+```
 
 ---
 
-## Cooldown System
+### Exemplo Completo: Sistema de Troca
 
-The `Cooldown` class provides a simple interface for managing cooldowns in your scripts. Below are its functions and usage details.
+```lua
+-- Server-side
+local tradeRequests = {}
 
-### Cooldown Class Functions
+RegisterServerCallback('trade:request', function(source, targetId)
+    if tradeRequests[targetId] then
+        return {success = false, message = "Jogador já tem uma solicitação pendente"}
+    end
+    
+    tradeRequests[targetId] = source
+    
+    TriggerClientCallback(targetId, 'trade:confirm', {senderId = source}, function(accepted)
+        if accepted then
+            -- Iniciar troca
+            TriggerClientEvent('trade:start', source, targetId)
+            TriggerClientEvent('trade:start', targetId, source)
+        else
+            TriggerClientEvent('trade:denied', source)
+        end
+        tradeRequests[targetId] = nil
+    end, 20, function()
+        TriggerClientEvent('trade:timeout', source)
+        tradeRequests[targetId] = nil
+    end)
+    
+    return {success = true, message = "Solicitação enviada"}
+end)
+
+-- Client-side
+RegisterClientCallback('trade:confirm', function(data)
+    local senderId = data.senderId
+    local accepted = exports["dk_snippets"]:request(
+        "Jogador " .. senderId .. " quer trocar itens com você",
+        20,
+        "Aceitar",
+        "Recusar"
+    )
+    return accepted
+end)
+
+RegisterCommand('trade', function(source, args)
+    local targetId = tonumber(args[1])
+    
+    if not targetId then
+        DkNotify("red", "Use: /trade [id]", 5000)
+        return
+    end
+    
+    local result = TriggerServerCallback('trade:request', {targetId})
+    DkNotify(result.success and "green" or "red", result.message, 5000)
+end)
+```
+
+---
+
+## ⏱️ Cooldown Manager
+
+Sistema de gerenciamento de cooldowns com métodos simples e eficientes.
+
+### Classe Cooldown
 
 #### `Cooldown:new(timer)`
-**Description**: Creates a new `Cooldown` instance.
 
-**Parameters:**
-- `timer` (integer|nil): The default cooldown duration in seconds (optional).
+Cria uma nova instância de cooldown.
 
-**Returns:**
-- A new `Cooldown` instance.
+**Parâmetros:**
+| Parâmetro | Tipo | Descrição |
+|-----------|------|-----------|
+| `timer` | number | Duração padrão em segundos (opcional) |
 
-**Usage Example:**
+**Retorno:** Instância de Cooldown
+
+**Exemplo:**
 ```lua
-local myCooldown = Cooldown:new(10) -- 10 seconds default cooldown
+local skillCooldown = Cooldown:new(30)  -- 30 segundos padrão
 ```
+
+---
 
 #### `Cooldown:start(timer)`
-**Description**: Starts a cooldown.
 
-**Parameters:**
-- `timer` (integer|nil): The cooldown duration in seconds (optional). Defaults to the value set in `Cooldown:new`.
+Inicia um cooldown.
 
-**Usage Example:**
+**Parâmetros:**
+| Parâmetro | Tipo | Descrição |
+|-----------|------|-----------|
+| `timer` | number | Duração em segundos (opcional, usa o padrão) |
+
+**Exemplo:**
 ```lua
-myCooldown:start(5) -- Start a 5-second cooldown
+skillCooldown:start(45)  -- Inicia com 45 segundos
+skillCooldown:start()    -- Usa o valor padrão (30)
 ```
+
+---
 
 #### `Cooldown:reset()`
-**Description**: Resets the cooldown, effectively stopping it.
 
-**Usage Example:**
+Reseta/para o cooldown.
+
+**Exemplo:**
 ```lua
-myCooldown:reset()
+skillCooldown:reset()
 ```
+
+---
 
 #### `Cooldown:check()`
-**Description**: Checks if the cooldown is active and returns the remaining time.
 
-**Returns:**
-- Remaining time in seconds (integer), or `nil` if the cooldown is not active.
+Verifica se o cooldown está ativo e retorna tempo restante.
 
-**Usage Example:**
+**Retorno:** `number|nil` - Segundos restantes ou `nil` se inativo
+
+**Exemplo:**
 ```lua
-local remaining = myCooldown:check()
+local remaining = skillCooldown:check()
 if remaining then
-    print("Cooldown active. Remaining time:", remaining, "seconds")
+    print("Cooldown ativo. Faltam " .. remaining .. " segundos")
 else
-    print("Cooldown is not active.")
-end
-```
-
-#### `Cooldown:checkAndCreate(timer, func)`
-**Description**: Checks if a cooldown is active. If not, starts a new cooldown and executes an optional function.
-
-**Parameters:**
-- `timer` (integer|nil): The cooldown duration in seconds (optional).
-- `func` (function|nil): A function to execute if the cooldown is active. Receives the remaining time as an argument.
-
-**Returns:**
-- `true` if a new cooldown was started.
-- `false` if the cooldown is still active.
-
-**Usage Example:**
-```lua
-local success = myCooldown:checkAndCreate(10, function(remaining)
-    print("Cooldown active for", remaining, "more seconds.")
-end)
-if success then
-    print("Cooldown started.")
-else
-    print("Cooldown is still active.")
+    print("Cooldown não está ativo")
 end
 ```
 
 ---
 
-## Utility Functions
+#### `Cooldown:checkAndCreate(timer, func)`
 
-#### `DkNotify(...)`
-**Description**: Sends notifications to both the client and server sides.
+Verifica cooldown e, se inativo, inicia um novo. Se ativo, executa função callback.
 
-**Parameters:**
-- `...` (any): Arguments to pass to the notification.
+**Parâmetros:**
+| Parâmetro | Tipo | Descrição |
+|-----------|------|-----------|
+| `timer` | number | Duração em segundos (opcional) |
+| `func` | function | Função a executar se cooldown ativo |
 
-**Usage Example:**
+**Retorno:** `boolean` - `true` se iniciou cooldown, `false` se já estava ativo
+
+**Exemplos:**
 ```lua
---client
-DkNotify("red", "Payment error!", 5000)
+local success = cooldown:checkAndCreate(nil, function(remaining)
+    DkNotify("yellow", "Aguarde " .. remaining .. " segundos", 3000)
+end)
 
---server
-DkNotify(source, "red", "Payment error!", 5000)
+if success then
+    -- Executar habilidade
+    print("Habilidade usada!")
+end
 ```
-#### `Dump(value, depth, key)`
-**Description**: Dumps the content of a variable in a readable format.
 
-**Parameters:**
-- `value` (any): The value to dump.
-- `depth` (integer): The current depth of the dump (optional).
-- `key` (any): The key associated with the value (optional).
+---
 
-**Usage Example:**
+### Exemplos Práticos de Cooldown
+
+#### Exemplo 1: Sistema de Habilidades
+
 ```lua
-local tbl = {name = "John", age = 30, nested = {key = "value"}}
-Dump(tbl)
+-- Server-side
+local playerCooldowns = {}
+
+RegisterServerCallback('skill:use', function(source, skillName)
+    local user = FW.getPlayer(source)
+    if not user then return {success = false} end
+    
+    local user_id = user.userId()
+    
+    -- Criar cooldown se não existir
+    if not playerCooldowns[user_id] then
+        playerCooldowns[user_id] = {}
+    end
+    
+    if not playerCooldowns[user_id][skillName] then
+        playerCooldowns[user_id][skillName] = Cooldown:new()
+    end
+    
+    local cooldown = playerCooldowns[user_id][skillName]
+    
+    local success = cooldown:checkAndCreate(60, function(remaining)
+        TriggerClientEvent('dk/notify', source, "warning", 
+            "Aguarde " .. remaining .. " segundos para usar novamente", 3000)
+    end)
+    
+    if success then
+        -- Executar habilidade
+        TriggerClientEvent('skill:execute', source, skillName)
+        return {success = true}
+    end
+    
+    return {success = false}
+end)
+```
+
+#### Exemplo 2: Comando com Cooldown
+
+```lua
+-- Client-side
+local commandCooldown = Cooldown:new(300)  -- 5 minutos
+
+RegisterCommand('evento', function()
+    local success = commandCooldown:checkAndCreate(nil, function(remaining)
+        local minutes = math.floor(remaining / 60)
+        local seconds = remaining % 60
+        DkNotify("red", string.format("Aguarde %dm %ds", minutes, seconds), 5000)
+    end)
+    
+    if success then
+        TriggerServerEvent('evento:start')
+    end
+end)
+```
+
+#### Exemplo 3: Cooldown Individual por Jogador
+
+```lua
+-- Server-side
+local robberySystem = {
+    cooldowns = {}
+}
+
+function robberySystem:canRob(user_id)
+    if not self.cooldowns[user_id] then
+        self.cooldowns[user_id] = Cooldown:new(1800)  -- 30 minutos
+    end
+    
+    local remaining = self.cooldowns[user_id]:check()
+    if remaining then
+        return false, remaining
+    end
+    
+    return true
+end
+
+function robberySystem:startRobbery(source)
+    local user = FW.getPlayer(source)
+    if not user then
+        return {success = false, message = "Jogador não encontrado"}
+    end
+    
+    local user_id = user.userId()
+    local canRob, remaining = self:canRob(user_id)
+    
+    if not canRob then
+        return {
+            success = false,
+            message = "Aguarde " .. math.floor(remaining / 60) .. " minutos"
+        }
+    end
+    
+    self.cooldowns[user_id]:start()
+    -- Lógica do roubo
+    
+    return {success = true, message = "Roubo iniciado!"}
+end
+
+RegisterServerCallback('robbery:start', function(source)
+    return robberySystem:startRobbery(source)
+end)
+```
+
+---
+
+## 🛠️ Utility Functions
+
+Coleção de funções auxiliares úteis para desenvolvimento.
+
+### `DkNotify(...)`
+
+Envia notificações para client ou server.
+
+**Client-side:**
+```lua
+DkNotify(mode, message, time, title)
+```
+
+**Server-side:**
+```lua
+DkNotify(source, mode, message, time, title)
+```
+
+**Exemplos:**
+```lua
+-- Client
+DkNotify("green", "Ação realizada!", 5000)
+
+-- Server
+DkNotify(source, "red", "Sem permissão", 5000, "Admin")
+```
+
+---
+
+### `Dump(value, depth, key)`
+
+Exibe o conteúdo de uma variável de forma legível.
+
+**Parâmetros:**
+| Parâmetro | Tipo | Descrição |
+|-----------|------|-----------|
+| `value` | any | Valor a exibir |
+| `depth` | number | Profundidade atual (opcional) |
+| `key` | any | Chave associada (opcional) |
+
+**Exemplos:**
+```lua
+local playerData = {
+    name = "John",
+    age = 30,
+    inventory = {
+        {item = "water", amount = 5},
+        {item = "bread", amount = 3}
+    }
+}
+
+Dump(playerData)
 --[[
+Saída:
     [name] = "John",
     [age] = 30,
-    [nested]
-        [key] = "value"
+    [inventory]
+        [1]
+            [item] = "water"
+            [amount] = 5
+        [2]
+            [item] = "bread"
+            [amount] = 3
 ]]
 ```
 
-#### `Match(str, datas)`
-**Description**: Matches a string with a corresponding value in a table.
+---
 
-**Parameters:**
-- `str` (string): The string to match.
-- `datas` (table): The table containing the data.
+### `Match(str, datas)`
 
-**Returns:**
-- The corresponding value or the result of the function if the value is a function. Returns `nil` if no match is found and no default value is provided.
+Faz correspondência de string com valores em uma tabela (similar ao switch/case).
 
-**Usage Example:**
+**Parâmetros:**
+| Parâmetro | Tipo | Descrição |
+|-----------|------|-----------|
+| `str` | string | String a corresponder |
+| `datas` | table | Tabela com correspondências |
+
+**Retorno:** Valor correspondente ou executa função, retorna `default` se não encontrar
+
+**Exemplos:**
 ```lua
-local result = Match("key1", {
-    key1 = "value1", 
-    key2 = 2,
-    key3 = {"can", "be", "a", "table"}, 
+-- Match simples
+local result = Match("admin", {
+    admin = "Administrador",
+    mod = "Moderador",
+    user = "Usuário",
+    default = "Desconhecido"
+})
+print(result)  -- "Administrador"
+
+-- Match com funções
+local action = Match(userRole, {
+    admin = function()
+        return "Acesso total"
+    end,
+    mod = function()
+        return "Acesso limitado"
+    end,
     default = function()
-        return "defaultValue"
+        return "Sem acesso"
     end
 })
-print(result) -- "value1"
-```
 
-#### `Ensure(obj, typeof, opt_typeof, errMessage)`
-**Description**: Ensures the type of an object matches the expected types and throws an error if it doesn't.
-
-**Parameters:**
-- `obj` (any): The object to check.
-- `typeof` (string|function): The primary type to check against.
-- `opt_typeof` (string|nil): An optional secondary type to check against.
-- `errMessage` (string|nil): An optional custom error message.
-
-**Returns**: 
-- Throws an error if the type of the object does not match the expected types.
-
-**Usage Example:**
-```lua
-Ensure(123, "number", "string")
--- No error
-
-Ensure("hello", "number", "string", "Custom error message")
--- Error: Custom error message
+-- Match para permissões
+local permission = Match(command, {
+    kick = "admin.kick",
+    ban = "admin.ban",
+    tp = "admin.teleport",
+    default = nil
+})
 ```
 
 ---
 
-### Table Utility Functions
+### `Ensure(obj, typeof, opt_typeof, errMessage)`
 
-#### `function table.count(self)`
-**Description**: Counts the number of elements in a table.
+Garante que um objeto é do tipo esperado, lança erro se não for.
 
-**Parameters:**
-- `self` (table): The table to count elements in.
+**Parâmetros:**
+| Parâmetro | Tipo | Descrição |
+|-----------|------|-----------|
+| `obj` | any | Objeto a verificar |
+| `typeof` | string\|function | Tipo primário esperado |
+| `opt_typeof` | string | Tipo secundário (opcional) |
+| `errMessage` | string | Mensagem de erro customizada |
 
-**Returns:**
-- The number of elements in the table.
-
-**Usage Example:**
+**Exemplos:**
 ```lua
-local count = table.count({1, 2, 3})
-print(count) -- 3
+-- Validação simples
+Ensure(userId, "number")
+
+-- Validação com tipo alternativo
+Ensure(value, "string", "number")
+
+-- Validação com mensagem customizada
+Ensure(callback, "function", nil, "Callback deve ser uma função")
+
+-- Uso em função
+function setPlayerMoney(user_id, amount)
+    Ensure(user_id, "number", nil, "user_id deve ser um número")
+    Ensure(amount, "number", nil, "amount deve ser um número")
+    
+    -- Lógica da função
+end
 ```
 
-#### `table.map(self, func, preventIndex)`
-**Description**: Maps a function to each element in a table and optionally prevents indexing.
+---
 
-**Parameters:**
-- `self` (table): The table to map over.
-- `func` (function): The function to apply.
-- `preventIndex` (boolean): Whether to prevent indexing.
+## 📊 Table Extensions
 
-**Returns:**
-- A new table with the mapped values.
+Extensões úteis para manipulação de tabelas.
 
-**Usage Example:**
+### `table.count(self)`
+
+Conta elementos em uma tabela.
+
+**Exemplo:**
 ```lua
-local result = table.map({1, 2, 3}, function(value)
+local items = {apple = 1, banana = 2, orange = 3}
+print(table.count(items))  -- 3
+
+local arr = {1, 2, 3, 4, 5}
+print(table.count(arr))  -- 5
+```
+
+---
+
+### `table.map(self, func, preventIndex)`
+
+Mapeia uma função para cada elemento.
+
+**Parâmetros:**
+| Parâmetro | Tipo | Descrição |
+|-----------|------|-----------|
+| `self` | table | Tabela a mapear |
+| `func` | function | Função a aplicar |
+| `preventIndex` | boolean | Prevenir indexação |
+
+**Exemplos:**
+```lua
+local numbers = {1, 2, 3, 4, 5}
+local doubled = table.map(numbers, function(value)
     return value * 2
 end)
-print(result) -- {2, 4, 6}
+-- doubled = {2, 4, 6, 8, 10}
+
+local players = {
+    {name = "John", level = 5},
+    {name = "Jane", level = 10}
+}
+local names = table.map(players, function(player)
+    return player.name
+end)
+-- names = {"John", "Jane"}
 ```
 
-#### `table.forEach(self, func)`
-**Description**: Iterates over each element in a table and applies a function.
+---
 
-**Parameters:**
-- `self` (table): The table to iterate over.
-- `func` (function): The function to apply.
+### `table.forEach(self, func)`
 
-**Usage Example:**
+Itera sobre cada elemento.
+
+**Exemplo:**
 ```lua
-table.forEach({1, 2, 3}, function(value)
-    print(value) -- 1, 2, 3
+local items = {"water", "bread", "phone"}
+table.forEach(items, function(item)
+    print("Item: " .. item)
 end)
 ```
 
-#### `table.find(self, func, keepIndex)`
-**Description**: Finds elements in a table that match a function's criteria.
+---
 
-**Parameters:**
-- `self` (table): The table to search.
-- `func` (function): The criteria function.
-- `keepIndex` (boolean): Whether to keep the original indices.
+### `table.find(self, func, keepIndex)`
 
-**Returns:**
-- A table of matching elements.
+Encontra elementos que correspondem a critérios.
 
-**Usage Example:**
+**Exemplos:**
 ```lua
-local matches = table.find({1, 2, 3}, function(value)
-    return value > 1
+local numbers = {1, 2, 3, 4, 5, 6}
+local evens = table.find(numbers, function(num)
+    return num % 2 == 0
 end)
-print(matches) -- {2, 3}
+-- evens = {2, 4, 6}
+
+local players = {
+    {name = "John", vip = true},
+    {name = "Jane", vip = false},
+    {name = "Bob", vip = true}
+}
+local vips = table.find(players, function(player)
+    return player.vip
+end)
+-- vips contém John e Bob
 ```
 
-#### `table.indexOf(self, o)`
-**Description**: Finds the index of an element in a table.
+---
 
-**Parameters:**
-- `self` (table): The table to search.
-- `o` (any): The element to find.
+### `table.indexOf(self, o)`
 
-**Returns:**
-- The index of the element, or `nil` if not found.
+Encontra o índice de um elemento.
 
-**Usage Example:**
+**Exemplo:**
 ```lua
-local index = table.indexOf({"a", "b", "c"}, "b")
-print(index) -- 2
+local fruits = {"apple", "banana", "orange"}
+local index = table.indexOf(fruits, "banana")
+print(index)  -- 2
 ```
+
+---
+
+<div align="center">
+
+**[⬅️ Server Docs](../server/SERVER.md)** | **[➡️ Voltar ao README](../../../README.md)**
+
+</div>

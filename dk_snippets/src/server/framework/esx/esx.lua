@@ -75,7 +75,7 @@ FW:set("esx", function()
             --- @param item string
             --- @param amount integer
             --- @param notify boolean
-            generateItem = function(item, amount, notify)
+            giveItem = function(item, amount, notify)
                 player.addInventoryItem(item, amount)
             end
         }
