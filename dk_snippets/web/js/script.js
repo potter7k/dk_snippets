@@ -82,9 +82,19 @@ function handleHint(data) {
   if (action === "create") {
     const hint = new HintsHandler($("#hints"));
     hint.create(hintData.description, hintData.control, hintData.configs);
+
+    if (hints.has(id)) {
+      const oldHint = hints.get(id);
+      oldHint.remove();
+      hints.delete(id);
+    }
+
     hints.set(id, hint);
   } else if (action === "remove") {
     const hint = hints.get(id);
+
+    if (!hint) return;
+
     hint.remove();
     hints.delete(id);
   }
