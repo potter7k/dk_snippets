@@ -79,10 +79,18 @@ if IS_SERVER then
 			local ticket = tostring(source) .. 'x' .. tostring(GetGameTimer())
 			local prom = promise.new()
 			local eventCallback = eventCallback
+			local eventHandlerRemoved = false
 			local eventData = RegisterNetEvent(('dk__callback_retval:%s:%s:%s'):format(source, eventName, ticket), function(packed)
 				if eventCallback and prom.state == PENDING then eventCallback( table_unpack(msgpack_unpack(packed)) ) end
 				prom:resolve( table_unpack(msgpack_unpack(packed)) )
 			end)
+
+			local function safeRemoveEventHandler()
+				if not eventHandlerRemoved and eventData then
+					eventHandlerRemoved = true
+					RemoveEventHandler(eventData)
+				end
+			end
 
 			TriggerClientEvent(('dk__client_callback:%s'):format(eventName), source, msgpack_pack(args or {}), ticket)
 
@@ -96,14 +104,14 @@ if IS_SERVER then
 					then
 						timedout(prom.state)
 						if prom.state == PENDING then prom:reject() end
-						RemoveEventHandler(eventData)
+						safeRemoveEventHandler()
 					end
 				end)
 			end
 
 			if not eventCallback then
 				local result = Citizen.Await(prom)
-				RemoveEventHandler(eventData)
+				safeRemoveEventHandler()
 				return result
 			end
 		else
@@ -170,12 +178,20 @@ if not IS_SERVER then
 		
 		local prom = promise.new()
 		local eventCallback = eventCallback
+		local eventHandlerRemoved = false
 		local eventData = RegisterNetEvent(('dk__client_callback_response:%s:%s'):format(eventName, SERVER_ID),
 		function(packed)
 			if eventCallback and prom.state == PENDING then eventCallback( table_unpack(msgpack_unpack(packed)) ) end
 			prom:resolve( table_unpack(msgpack_unpack(packed)) )
 
 		end)
+
+		local function safeRemoveEventHandler()
+			if not eventHandlerRemoved and eventData then
+				eventHandlerRemoved = true
+				RemoveEventHandler(eventData)
+			end
+		end
 
 		TriggerServerEvent('dk__server_callback:'..eventName, msgpack_pack( args ))
 
@@ -189,14 +205,14 @@ if not IS_SERVER then
 				then
 					timedout(prom.state)
 					if prom.state == PENDING then prom:reject() end
-					RemoveEventHandler(eventData)
+					safeRemoveEventHandler()
 				end
 			end)
 		end
 
 		if not eventCallback then
 			local result = Citizen.Await(prom)
-			RemoveEventHandler(eventData)
+			safeRemoveEventHandler()
 			return result
 		end
 	end

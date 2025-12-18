@@ -5,6 +5,7 @@ local active = {}
 ---@return boolean
 local function loadRequest(description, timer, acceptText, denyText)
     local currentId = #active + 1
+    local requestTimer = timer or 20
     table.insert(active, currentId)
 
     SendNUIMessage({
@@ -14,13 +15,24 @@ local function loadRequest(description, timer, acceptText, denyText)
             id = currentId,
             title = "Solicitação",
             description = description,
-            timer = timer or 20,
+            timer = requestTimer,
             acceptText = acceptText,
             denyText = denyText
         }
     })
 
-    while active[currentId] do
+    -- Timer de timeout: se o tempo acabar sem resposta, retorna false
+    local timedOut = false
+    SetTimeout(requestTimer * 1000, function()
+        local index = table.indexOf(active, currentId)
+        if index then
+            timedOut = true
+            success = false
+            table.remove(active, ParseInt(index))
+        end
+    end)
+
+    while active[currentId] and not timedOut do
         Wait(1)
     end
 
@@ -45,6 +57,11 @@ end
 RegisterNUICallback("requestResponse",function(data)
     success = data.success
     local index = table.indexOf(active, data.id)
+
+    if not index then
+        return
+    end
+
     table.remove(active, ParseInt(index))
 end)
 
