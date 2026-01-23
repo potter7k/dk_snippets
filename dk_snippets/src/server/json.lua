@@ -77,15 +77,16 @@ end
 function JSON:insert(key, data, ignoreId)
     if not self.datas[key] then
         self.datas[key] = {}
-        if not ignoreId then
-            self.nextId[key] = 1
-        end
+    end
+    local tableDatas = self.datas[key]
+    if table.count(tableDatas) < 1 and not ignoreId then
+        self.nextId[key] = 1
     end
     if not data.id and self.nextId[key] and not ignoreId then
         data.id = self.nextId[key]
         self.nextId[key] = self.nextId[key] + 1
     end
-    table.insert(self.datas[key], data)
+    table.insert(tableDatas, data)
     self:set(self.datas)
     return {
         affectedRows = 1,
