@@ -21,7 +21,7 @@ local frameworkName, FW = exports["dk_snippets"]:framework()
 ```
 
 **Retorno:**
-- `frameworkName` (string|nil): Nome do framework detectado (`"vrp"`, `"esx"`, `nil`)
+- `frameworkName` (string|nil): Nome do framework detectado (`"vrp"`, `"esx"`, `"qbcore"`, `nil`)
 - `FW` (table): Objeto com funções predefinidas do framework
 
 ### Configurar Metatable para Funções Dinâmicas
@@ -65,6 +65,33 @@ O script detecta automaticamente qual variação do vRP está ativa no servidor.
 ### ESX
 
 > 🔄 **Em desenvolvimento**
+
+### QBCore
+
+**Detecção:** O script detecta automaticamente o QBCore verificando o resource `qb-core`.
+
+**Funções Suportadas:**
+- ✅ `getPlayer(source)` — Retorna objeto do jogador
+- ✅ `getPlayerById(citizenid)` — Busca jogador pelo CitizenID
+- ✅ `getPlayersByPermission(perm)` — Lista jogadores com determinada permissão
+- ✅ `getPlayersByJob(jobName)` — Lista jogadores com determinado job
+- ✅ `_custom(name, ...)` — Chamadas dinâmicas ao `QBCore.Functions`
+
+**Métodos do Jogador (QBCore):**
+- `userId()` — Retorna o CitizenID
+- `userSource()` — Retorna o source
+- `isAdmin()` — Verifica permissão de admin
+- `paymentBank(amount)` — Paga usando dinheiro do banco
+- `giveBank(amount)` — Adiciona dinheiro ao banco
+- `paymentCash(amount)` — Paga usando dinheiro em mãos
+- `giveCash(amount)` — Adiciona dinheiro em mãos
+- `itemAmount(item)` — Quantidade de um item no inventário
+- `takeItem(item, amount, notify)` — Remove item do inventário
+- `giveItem(item, amount, notify)` — Adiciona item ao inventário
+- `getJob()` — Retorna dados do job
+- `getGang()` — Retorna dados da gang
+- `hasJob(jobName)` — Verifica se possui determinado job
+- `isOnDuty()` — Verifica se está em serviço
 
 ### Sem Framework
 
@@ -403,6 +430,8 @@ RegisterServerCallback('system:checkPermission', function(source, permission)
         return user.hasPermission(permission)
     elseif frameworkName == "esx" then
         return user.hasGroup(permission)
+    elseif frameworkName == "qbcore" then
+        return QBCore.Functions.HasPermission(source, permission)
     else
         -- Framework não suportado, usar lógica customizada
         return false
@@ -484,6 +513,8 @@ FW:set("isStaff", function(source)
         return user.isAdmin() or user.hasModerator()
     elseif frameworkName == "esx" then
         return user.hasGroup("admin") or user.hasGroup("mod")
+    elseif frameworkName == "qbcore" then
+        return user.isAdmin()
     else
         -- Lista estática de admins
         local adminList = {1, 2, 3}  -- User IDs

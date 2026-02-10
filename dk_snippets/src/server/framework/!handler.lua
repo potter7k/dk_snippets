@@ -4,7 +4,8 @@ FW = {
 
 local supportedFrameworks = {
     vrp = function() return FW:get("vrp") end,
-    es_extended = function() return FW:get("esx") end
+    es_extended = function() return FW:get("esx") end,
+    ["qb-core"] = function() return FW:get("qbcore") end
 }
 
 function FW:set(name, func)

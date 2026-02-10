@@ -319,20 +319,30 @@ end)
 
 --- Load the tables and their columns from the database.
 local function loadTables()
-    local tables = SQL.silent([[
-        SELECT table_name as t, column_name as c FROM information_schema.columns WHERE 
-        table_schema = DATABASE()
-    ]])
+    -- Opção mais leve: usa SHOW TABLES + DESCRIBE ao invés de information_schema
+    -- information_schema pode ser lenta em bancos com muitas tabelas
+    local tableList = SQL.silent("SHOW TABLES")
+    
+    if not tableList or #tableList == 0 then
+        print("[SQL Warning] Nenhuma tabela encontrada no banco de dados.")
+        return
+    end
 
-    table.forEach(tables, function(tbl)
-        local table, column = tbl.t, tbl.c
-
-        if not SQL.tables[table] then
-            SQL.tables[table] = {}
+    for _, row in ipairs(tableList) do
+        -- SHOW TABLES retorna uma coluna com nome variável baseado no banco
+        local tableName = row[next(row)]
+        
+        if tableName then
+            SQL.tables[tableName] = {}
+            
+            local columns = SQL.silent("SHOW COLUMNS FROM `" .. tableName .. "`")
+            if columns then
+                for _, col in ipairs(columns) do
+                    SQL.tables[tableName][col.Field] = true
+                end
+            end
         end
-
-        SQL.tables[table][column] = true
-    end)
+    end
 end
 
 --- Initialize the SQL driver.
