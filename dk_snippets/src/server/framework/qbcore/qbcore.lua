@@ -4,7 +4,7 @@ FW:set("qbcore", function()
 
     ---Pegar player pela source
     ---@param source integer
-    ---@return table | nil
+    ---@return Player | nil
     function funcs.getPlayer(source)
         local player = QBCore.Functions.GetPlayer(source)
         if not player then
@@ -139,7 +139,7 @@ FW:set("qbcore", function()
 
     ---Pegar player pelo id (citizenid)
     ---@param user_id string
-    ---@return table | nil
+    ---@return Player | nil
     function funcs.getPlayerById(user_id)
         local player = QBCore.Functions.GetPlayerByCitizenId(user_id)
         if player then
@@ -152,7 +152,7 @@ FW:set("qbcore", function()
 
     ---Pegar players por permissão
     ---@param perm string
-    ---@return table
+    ---@return Player[]
     function funcs.getPlayersByPermission(perm)
         local players = {}
         local qbPlayers = QBCore.Functions.GetQBPlayers()
@@ -161,7 +161,14 @@ FW:set("qbcore", function()
                 table.insert(players, src)
             end
         end
-        return players
+
+        if type(players) ~= "table" then
+            return {}
+        end
+
+        return table.map(players, function(source)
+            return funcs.getPlayer(source)
+        end, false)
     end
 
     ---Pegar players por job
@@ -188,6 +195,12 @@ FW:set("qbcore", function()
         end
         print("^3[DK Snippets]^7 Função QBCore não encontrada: " .. name)
         return nil
+    end
+
+    ---Pegar nome do framework
+    ---@return string
+    function funcs.getFramework()
+        return "qbcore"
     end
 
     return "qbcore", funcs

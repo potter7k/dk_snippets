@@ -1,15 +1,17 @@
 FW:set("vrp", function()
     -- CONEXÃO BD
+    ---@type SQL
     local SQL = DB()
-    -- 
 
     -- COLETAR FUNÇÕES DA VRP
+    ---@diagnostic disable-next-line: lowercase-global
     vRP = {}
     vRP.__callbacks = {}
+    ---@diagnostic disable-next-line: duplicate-set-field
     vRP.__index = function(self, name)
         self[name] = function(...)
             local p = promise.new()
-            table.insert(self.__callbacks,p)
+            table.insert(self.__callbacks, p)
             TriggerEvent('vRP:proxy', name, {...}, GetCurrentResourceName(), #self.__callbacks)
             return table.unpack(Citizen.Await(p))
         end
@@ -27,31 +29,36 @@ FW:set("vrp", function()
     end)
 
     setmetatable(vRP, vRP)
-    -- 
 
     -- DETECTAR VERSÃO VRP
-    local fwName = "vrp."
+    ---@type string|nil
+    local version = nil
+
     if SQL.hasTable('vrp_infos') and SQL.hasTable('vrp_permissions') then
-        fwName = fwName.."crv3"
+        version = "vrp.crv3"
     elseif GetResourceMetadata('vrp', 'creative_network') or vRP.Groups() then
-        fwName = fwName.."crnetwork"
+        version = "vrp.crnetwork"
     elseif SQL.hasTable('summerz_characters') or SQL.hasTable('characters') then
-        fwName = fwName.."crv5"
+        version = "vrp.crv5"
     elseif SQL.hasTable('vrp_user_data') then
-        fwName = fwName.."vrpex"
-    else
-        error("[ERRO] versão do framework vRP não identificada.")
+        version = "vrp.vrpex"
     end
-    --
 
-    -- NÃO ALTERAR
-    local funcs = FW:get(fwName)
+    if not version then
+        error("[dk_snippets] Versão do vRP não encontrada automaticamente. Entre em contato com a nossa equipe no discord para suporte.")
+    end
+
+    local funcs = FW:getVersion(version)
+
+    function funcs.getFramework()
+        return version
+    end
+
     function funcs._custom(name, ...)
-        return vRP[name] (...)
+        return vRP[name](...)
     end
-    -- 
 
-    return fwName, funcs
+    return version, funcs
 end)
 
 

@@ -21,12 +21,12 @@ local function userSource(user_id)
     return vRP.userSource(user_id)
 end
 
-FW:set("vrp.crv5", function()
+FW:setVersion("vrp.crv5", function()
     local funcs = {}
 
     ---Pegar player pela source
     ---@param source integer
-    ---@return table | nil
+    ---@return Player | nil
     function funcs.getPlayer(source)
         local user_id = userId(source)
         if not user_id then
@@ -94,7 +94,7 @@ FW:set("vrp.crv5", function()
 
     ---Pegar player pelo id
     ---@param user_id integer
-    ---@return table | nil
+    ---@return Player | nil
     function funcs.getPlayerById(user_id)
         local source = userSource(user_id)
         if source then
@@ -107,9 +107,17 @@ FW:set("vrp.crv5", function()
 
     ---Pegar players por permissão
     ---@param perm string
-    ---@return table
+    ---@return Player[]
     function funcs.getPlayersByPermission(perm)
-        return vRP.numPermission(perm) or {}
+        local players = vRP.numPermission(perm) or {}
+
+        if type(players) ~= "table" then
+            return {}
+        end
+
+        return table.map(players, function(source)
+            return funcs.getPlayer(source)
+        end, false)
     end
 
     return funcs

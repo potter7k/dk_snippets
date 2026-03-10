@@ -2,6 +2,9 @@ FW:set("esx", function()
     local funcs = {}
     local ESX = exports.es_extended:getSharedObject()
 
+    ---Pegar player pela source
+    ---@param source integer
+    ---@return Player | nil
     function funcs.getPlayer(source)
         local player = ESX.GetPlayerFromId(source)
         if not player then
@@ -83,7 +86,7 @@ FW:set("esx", function()
 
     ---Pegar player pelo id
     ---@param user_id integer
-    ---@return table | nil
+    ---@return Player | nil
     function funcs.getPlayerById(user_id)
         local xPlayers = ESX.GetPlayers()
         for _, source in ipairs(xPlayers) do
@@ -99,7 +102,7 @@ FW:set("esx", function()
 
     ---Pegar players por permissão
     ---@param perm string
-    ---@return table
+    ---@return Player[]
     function funcs.getPlayersByPermission(perm)
         local players = {}
         local xPlayers = ESX.GetPlayers()
@@ -108,7 +111,20 @@ FW:set("esx", function()
                 table.insert(players, source)
             end
         end
-        return players
+
+        if type(players) ~= "table" then
+            return {}
+        end
+
+        return table.map(players, function(source)
+            return funcs.getPlayer(source)
+        end, false)
+    end
+
+    ---Pegar nome do framework
+    ---@return string
+    function funcs.getFramework()
+        return "esx"
     end
 
     return "esx", funcs

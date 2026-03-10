@@ -1,6 +1,15 @@
 ---@class JSON
-
-JSON = {}
+---@field nextId table<string, integer> A table to keep track of the next auto-increment ID for each key.
+---@field target table Contains the directory and path for the JSON file.
+---@field datas table The actual data loaded from the JSON file.
+JSON = {
+    nextId = {},
+    target = {
+        dir = nil,
+        path = nil
+    },
+    datas = {}
+}
 JSON.__index = JSON
 
 --- Fetch data from a JSON file and initialize the object.

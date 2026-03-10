@@ -1,6 +1,23 @@
---- Notify function to trigger events on both client and server sides.
----@param ... any
----@vararg any
+---@enum NotifyModes
+NotifyModes = {
+	GREEN = "green",
+	RED = "red",
+	YELLOW = "yellow",
+}
+
+--- Sends a notification to a player.
+---
+--- **Client-side:**
+--- ```lua
+--- DkNotify(NotifyModes.GREEN, "Compra efetuada com sucesso!", 4000)
+--- ```
+---
+--- **Server-side** (requires the player source as the first argument):
+--- ```lua
+--- DkNotify(source, NotifyModes.GREEN, "Compra efetuada com sucesso!", 4000)
+--- ```
+---@overload fun(mode: NotifyModes, message: string, duration?: number) — Client-side
+---@overload fun(source: number, mode: NotifyModes, message: string, duration?: number) — Server-side
 function DkNotify(...)
 	if IsDuplicityVersion() then
 		TriggerClientEvent("dk/notify", ...)

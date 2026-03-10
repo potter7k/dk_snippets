@@ -4,12 +4,15 @@ game 'gta5'
 author 'potter7k'
 description 'Scripts desenvolvidos por DK Development. Discord: https://discord.gg/NJjUn8Ad3P'
 
-version '2.1.3'
+lua54 'yes'
+
+version '2.3.0'
 
 ui_page 'web/index.html'
 
 shared_scripts {
     'src/shared/utils.lua',
+    'src/shared/require.lua',
     'src/shared/callbacks.lua',
     'src/shared/cooldowns.lua'
 }

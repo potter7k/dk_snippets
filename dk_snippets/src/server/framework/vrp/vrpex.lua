@@ -21,12 +21,12 @@ local function userSource(user_id)
     return vRP.userSource(user_id)
 end
 
-FW:set("vrp.vrpex", function()
+FW:setVersion("vrp.vrpex", function()
     local funcs = {}
 
     ---Pegar player pela source
     ---@param source integer
-    ---@return table | nil
+    ---@return Player | nil
     function funcs.getPlayer(source)
         local user_id = userId(source)
         if not user_id then
@@ -94,7 +94,7 @@ FW:set("vrp.vrpex", function()
 
     ---Pegar player pelo id
     ---@param user_id integer
-    ---@return table | nil
+    ---@return Player | nil
     function funcs.getPlayerById(user_id)
         local source = userSource(user_id)
         if source then
@@ -107,14 +107,17 @@ FW:set("vrp.vrpex", function()
 
     ---Pegar players por permissão
     ---@param perm string
-    ---@return table 
+    ---@return Player[]
     function funcs.getPlayersByPermission(perm)
-        local players = {}
-        local list = vRP.getUsersByPermission(perm) or {}
-        for _, id in pairs(list) do
-            table.insert(players, userSource(id))
+        local players = vRP.getUsersByPermission(perm) or {}
+
+        if type(players) ~= "table" then
+            return {}
         end
-        return players
+
+        return table.map(players, function(userId)
+            return funcs.getPlayerById(userId)
+        end, false)
     end
 
     return funcs

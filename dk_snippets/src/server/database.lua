@@ -1,5 +1,4 @@
 ---@class SQL
-
 local SQL = {}
 setmetatable(SQL, SQL)
 
