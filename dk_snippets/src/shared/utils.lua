@@ -3,6 +3,7 @@ NotifyModes = {
 	GREEN = "green",
 	RED = "red",
 	YELLOW = "yellow",
+	BLUE = "blue"
 }
 
 --- Sends a notification to a player.
@@ -59,32 +60,32 @@ end
 ---@param defaults table
 ---@return table
 function Class(defaults)
-    local class = {}
+	local class = {}
 
-    for key, value in pairs(defaults or {}) do
-        class[key] = value
-    end
+	for key, value in pairs(defaults or {}) do
+		class[key] = value
+	end
 
-    class.__index = class
+	class.__index = class
 
-    function class:new(...)
-        local obj = setmetatable({}, self)
+	function class:new(...)
+		local obj = setmetatable({}, self)
 
-        for key, value in pairs(self) do
-            if key ~= "__index" and key ~= "new" and type(value) ~= "function" then
-                obj[key] = value
-            end
-        end
+		for key, value in pairs(self) do
+			if key ~= "__index" and key ~= "new" and type(value) ~= "function" then
+				obj[key] = value
+			end
+		end
 
-        -- Chama o construtor se existir
-        if obj.constructor then
-            obj:constructor(...)
-        end
+		-- Chama o construtor se existir
+		if obj.constructor then
+			obj:constructor(...)
+		end
 
-        return obj
-    end
+		return obj
+	end
 
-    return class
+	return class
 end
 
 local sanitize_tmp = {}
@@ -151,14 +152,14 @@ end
 ---@param str string The string to join.
 ---@return string The resulting string with elements separated by commas.
 function Join(tbl, str)
-    local result = ""
-    for i, value in ipairs(tbl) do
-        result = result .. value
-        if i < #tbl then
-            result = result .. str .. " "
-        end
-    end
-    return result
+	local result = ""
+	for i, value in ipairs(tbl) do
+		result = result .. value
+		if i < #tbl then
+			result = result .. str .. " "
+		end
+	end
+	return result
 end
 
 --- Round a number to a specified number of decimal places.
@@ -166,13 +167,13 @@ end
 ---@param decimals integer The number of decimal places to keep.
 ---@return number The rounded number.
 function Round(value, decimals)
-    local factor = 10 ^ (decimals or 0)
-    return math.floor(value * factor) / factor
+	local factor = 10 ^ (decimals or 0)
+	return math.floor(value * factor) / factor
 end
 
 function Ensure(obj, expected, errMessage)
-    local objtype = type(obj)
-    local errorMess = errMessage or 'expected %s, but got %s'
+	local objtype = type(obj)
+	local errorMess = errMessage or 'expected %s, but got %s'
 
 	local pass = false
 	table.forEach(expected, function(curType)
@@ -192,24 +193,23 @@ function Ensure(obj, expected, errMessage)
 	error((errorMess):format(Join(expected, ","), objtype))
 end
 
-
 --- Match a string with a corresponding value in a table.
 ---@param str string
 ---@param datas table
 ---@return any
 function Match(str, datas)
-    local dataReturn = datas[str]
-    if not dataReturn then
-        if not datas.default then
-            return nil
-        end
-        dataReturn = datas.default
-    end
+	local dataReturn = datas[str]
+	if not dataReturn then
+		if not datas.default then
+			return nil
+		end
+		dataReturn = datas.default
+	end
 
-    if type(dataReturn) == "function" then
-        return dataReturn()
-    end
-    return dataReturn
+	if type(dataReturn) == "function" then
+		return dataReturn()
+	end
+	return dataReturn
 end
 
 --- Dump the content of a variable in a readable format.
@@ -217,14 +217,14 @@ end
 ---@param depth? integer
 ---@param key? any
 function Dump(value, depth, key)
-    local linePrefix = ""
-    local spaces = ""
+	local linePrefix = ""
+	local spaces = ""
 
-    if key ~= nil then
+	if key ~= nil then
 		if type(key) == "string" and key:sub(1, 2) == "__" then return end
 
-        linePrefix = "[" .. key .. "] = "
-    end
+		linePrefix = "[" .. key .. "] = "
+	end
 
 	if not depth then
 		depth = 0
@@ -232,24 +232,24 @@ function Dump(value, depth, key)
 
 	depth = depth + 1
 
-    for i = 1, depth do
-        spaces = spaces .. "  "
-    end
+	for i = 1, depth do
+		spaces = spaces .. "  "
+	end
 
-    if type(value) == "table" then
-        local metaTable = getmetatable(value)
-        if metaTable ~= nil then
-            print(spaces .. linePrefix .. "(metatable) ")
-            Dump(metaTable, depth)
-        else
-            print(spaces .. linePrefix .. "(table) ")
-        end
-        for tableKey, tableValue in pairs(value) do
-            Dump(tableValue, depth, tableKey)
-        end
-    else
-        print(spaces .. linePrefix .. tostring(value) .. " (" .. type(value) .. ")")
-    end
+	if type(value) == "table" then
+		local metaTable = getmetatable(value)
+		if metaTable ~= nil then
+			print(spaces .. linePrefix .. "(metatable) ")
+			Dump(metaTable, depth)
+		else
+			print(spaces .. linePrefix .. "(table) ")
+		end
+		for tableKey, tableValue in pairs(value) do
+			Dump(tableValue, depth, tableKey)
+		end
+	else
+		print(spaces .. linePrefix .. tostring(value) .. " (" .. type(value) .. ")")
+	end
 end
 
 --- Count the number of elements in a table.
@@ -332,7 +332,6 @@ function table.slice(self, startIndex, endIndex)
 
 	if endIndex < 0 then
 		endIndex = length + endIndex + 1
-
 	elseif endIndex > length then
 		endIndex = length
 	end

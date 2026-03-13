@@ -19,7 +19,7 @@ export default class HintsHandler {
     create(description, control, configs = {}) {
         this.$hint = $(`
         <div class="hints__container animate__animated animate__fadeInRight">
-            ${configs.infoIcon ? `<span class="material-symbols-outlined">info</span>` : ""}
+            ${configs.infoIcon ? `<span class="hint-info-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span>` : ""}
             ${control ? `<p class="hint-control">${control}</p>` : ""}
             <p class="hint-description">${description}</p>
         </div>

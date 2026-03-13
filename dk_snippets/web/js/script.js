@@ -3,32 +3,45 @@ import RequestHandler from "./request-handler.js";
 
 function defaultNotify(item) {
   let data = item.notify;
-  let images = {
+
+  const types = {
     green: {
-      image: "./assets/images/success.png",
+      className: "currentNotify--success",
+      icon: "✓",
       text: "Sucesso",
     },
     red: {
-      image: "./assets/images/danger.png",
+      className: "currentNotify--danger",
+      icon: "✕",
       text: "Negado",
     },
     yellow: {
-      image: "./assets/images/warning.png",
+      className: "currentNotify--warning",
+      icon: "!",
       text: "Aviso",
+    },
+    blue: {
+      className: "currentNotify--blue",
+      icon: "i",
+      text: "Info",
     },
   };
 
   if (!data) return;
-  if (!images[data.index]) return;
+  if (!types[data.index]) return;
+
   let time = data.time ? data.time : 3000;
+  const type = types[data.index];
+
   var div = $(`
-      <div class="currentNotify animate__animated animate__fadeInRight">
-          <div class="notifyLeftSide">
-              <img src="${images[data.index].image}" alt="">
-          </div>
+      <div class="currentNotify ${type.className} animate__animated animate__fadeInRight">
+          <div class="notifyIcon">${type.icon}</div>
           <div class="notifyRightSide">
-              <h1>${data.title ? data.title : images[data.index].text}</h1>
+              <h1>${data.title ? data.title : type.text}</h1>
               <p>${data.message}</p>
+          </div>
+          <div class="notifyProgress">
+              <div class="notifyProgress__bar" style="animation: notifyProgressShrink ${time}ms linear forwards;"></div>
           </div>
       </div>
       `)

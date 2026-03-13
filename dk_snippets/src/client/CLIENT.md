@@ -35,6 +35,7 @@ DkNotify(mode, message, time, title)
 - `"green"` - Notificação de sucesso (verde)
 - `"red"` - Notificação de erro (vermelho)
 - `"yellow"` - Notificação de aviso (amarelo)
+- `"blue"` - Notificação informativa (azul/indigo)
 
 ### Exemplos
 

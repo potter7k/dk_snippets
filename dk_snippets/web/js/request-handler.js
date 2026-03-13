@@ -6,6 +6,7 @@ export default class RequestHandler {
     #id;
     #title;
     #timer;
+    #totalTimer;
     #description;
 
     #acceptText;
@@ -15,6 +16,7 @@ export default class RequestHandler {
     #mainDiv;
     #acceptButton;
     #denyButton;
+    #progressBar;
     #requestInterval;
 
     /**
@@ -29,6 +31,7 @@ export default class RequestHandler {
         this.#id = id;
         this.#title = title;
         this.#timer = timer;
+        this.#totalTimer = timer;
         this.#description = description;
         this.#acceptText = acceptText ?? "Aceitar (Y)";
         this.#denyText = denyText ?? "Recusar (U)";
@@ -109,7 +112,7 @@ export default class RequestHandler {
 
         const header = $('<header>').addClass('requests__container__header');
         const h1 = $('<h1>').text(this.#title);
-        const h2 = $('<h2>').text(this.#timer);
+        const h2 = $('<h2>').text(this.#timer + 's');
         this.#timerDiv = h2;
 
         header.append(h1, h2);
@@ -117,6 +120,11 @@ export default class RequestHandler {
         const descriptionDiv = $('<div>').addClass('requests__container__description');
         const p = $('<p>').html(this.#description);
         descriptionDiv.append(p);
+
+        // Progress bar
+        const progressDiv = $('<div>').addClass('requests__container__progress');
+        this.#progressBar = $('<div>').addClass('requests__container__progress__bar');
+        progressDiv.append(this.#progressBar);
 
         const buttonsDiv = $('<div>').addClass('requests__container__buttons');
         this.#denyButton = $('<button>')
@@ -141,7 +149,7 @@ export default class RequestHandler {
 
         buttonsDiv.append(this.#denyButton, this.#acceptButton);
 
-        this.#mainDiv.append(header, descriptionDiv, buttonsDiv);
+        this.#mainDiv.append(header, descriptionDiv, progressDiv, buttonsDiv);
 
         return this.#mainDiv;
     }
@@ -152,7 +160,11 @@ export default class RequestHandler {
     decreaseTimer() {
         if (this.#timer > 0) {
             this.#timer = this.#timer - 1;
-            this.#timerDiv.text(this.#timer);
+            this.#timerDiv.text(this.#timer + 's');
+
+            // Update progress bar
+            const percent = (this.#timer / this.#totalTimer) * 100;
+            this.#progressBar.css('width', percent + '%');
         }
     }
 
