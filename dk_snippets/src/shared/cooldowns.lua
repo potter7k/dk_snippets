@@ -1,11 +1,19 @@
 ---@class Cooldown
+---@field defaultTimer integer Tempo padrão do cooldown em milissegundos.
+---@field timer integer Timestamp (ms) de quando o cooldown expira.
+---@field new fun(self: Cooldown, timer?: integer): Cooldown Cria uma nova instância de Cooldown.
+---@field constructor fun(self: Cooldown, timer?: integer) Construtor interno.
+---@field start fun(self: Cooldown, timer?: integer) Inicia o cooldown.
+---@field reset fun(self: Cooldown) Reseta o cooldown.
+---@field check fun(self: Cooldown): integer|nil Verifica se está ativo; retorna segundos restantes ou nil.
+---@field checkAndCreate fun(self: Cooldown, timer?: integer, func?: fun(seconds: integer)): boolean Verifica e cria se inativo.
 Cooldown = Class({
     defaultTimer = 0,
     timer = 0
 })
 
---- Create a constructor.
----@param timer integer|nil
+--- Construtor do Cooldown.
+---@param timer integer|nil Tempo em segundos (será convertido para ms internamente).
 function Cooldown:constructor(timer)
     self.defaultTimer = (timer or 0) * 1000
     self.timer = 0

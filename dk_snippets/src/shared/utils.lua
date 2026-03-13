@@ -27,15 +27,42 @@ function DkNotify(...)
 	end
 end
 
----Request function. Prompts the user to confirm whether they want to perform a specific action. Returns `true` if the user agrees, `false` otherwise.
----@param ... any
----@return boolean
+--- Sends a request notification to a player, which can be used for confirmations.
+---
+--- **Client-side:**
+--- ```lua
+--- DkRequest(description, timer, acceptText, denyText)
+--- ```
+---
+--- **Server-side** (requires the player source as the first argument):
+--- ```lua
+--- DkRequest(source, description, timer, acceptText, denyText)
+--- ```
+---@overload fun(description: string, timer?: number, acceptText?: string, denyText?: string) — Client-side
+---@overload fun(source: number, description: string, timer?: number, acceptText?: string, denyText?: string) — Server-side
 function DkRequest(...)
 	return exports["dk_snippets"]:request(...)
 end
 
+---@class HintConfig
+---@field infoIcon boolean? Indicates whether to display an information icon in the hint.
+---@field time number? Duration in milliseconds for which the hint should be displayed. If not specified, the hint will remain until removed.
+
+---@alias HintAction "create" | "remove"
+
 --- Hint function to display hints on both client and server sides.
----@param ... any
+---
+--- **Client-side:**
+--- ```lua
+--- DkHint(action, id, description, control, configs)
+--- ```
+---
+--- **Server-side** (requires the player source as the first argument):
+--- ```lua
+--- DkHint(source, action, id, description, control, configs)
+--- ```
+---@overload fun(action: HintAction, id: string, description: string, control?: string, configs?: HintConfig) — Client-side
+---@overload fun(source: number, action: HintAction, id: string, description: string, control?: string, configs?: HintConfig) — Server-side
 function DkHint(...)
 	if IsDuplicityVersion() then
 		TriggerClientEvent("dk/hint", ...)
@@ -56,9 +83,26 @@ function ParseInt(v)
 	end
 end
 
---- Função para criar classes com metatable
----@param defaults table
----@return table
+--- Função para criar classes com metatable.
+--- Retorna uma classe com suporte a herança, construtores e instanciação via `:new(...)`.
+---
+--- ```lua
+--- local Animal = Class({ name = "Unknown" })
+---
+--- function Animal:constructor(name)
+---     self.name = name
+--- end
+---
+--- function Animal:greet()
+---     return "Hi, I'm " .. self.name
+--- end
+---
+--- local dog = Animal:new("Rex")
+--- print(dog:greet()) -- Hi, I'm Rex
+--- ```
+---@generic T : table
+---@param defaults T Tabela com propriedades e valores padrão da classe.
+---@return T|{ new: fun(self: T, ...): T, constructor: fun(self: T, ...) }
 function Class(defaults)
 	local class = {}
 
@@ -121,9 +165,9 @@ function SanitizeString(str, strchars, allow_policy)
 end
 
 --- Split a string by a specified delimiter.
----@param fullstr string
----@param symbol string
----@return table
+---@param fullstr string The string to split.
+---@param symbol? string The delimiter character (default: "-").
+---@return string[] parts The resulting parts of the split.
 function SplitString(fullstr, symbol)
 	local tbl = {}
 
@@ -147,10 +191,10 @@ function ParseFormat(val)
 	return left .. (number:reverse():gsub("(%d%d%d)", "%1."):reverse()) .. right
 end
 
---- Joins the elements of a table into a string separated by commas.
----@param tbl table The table to join.
----@param str string The string to join.
----@return string The resulting string with elements separated by commas.
+--- Joins the elements of a table into a string with a separator.
+---@param tbl string[] The list of string elements to join.
+---@param str string The separator between elements.
+---@return string result The resulting concatenated string.
 function Join(tbl, str)
 	local result = ""
 	for i, value in ipairs(tbl) do
@@ -167,8 +211,9 @@ end
 ---@param decimals integer The number of decimal places to keep.
 ---@return number The rounded number.
 function Round(value, decimals)
-	local factor = 10 ^ (decimals or 0)
-	return math.floor(value * factor) / factor
+    local factor = 10 ^ (decimals or 0)
+    -- Adicionar 0.5 compensa a imprecisão e faz o arredondamento correto (Half-Up)
+    return math.floor(value * factor + 0.5) / factor
 end
 
 function Ensure(obj, expected, errMessage)
@@ -255,6 +300,7 @@ end
 --- Count the number of elements in a table.
 ---@param self table
 ---@return integer
+---@diagnostic disable-next-line: duplicate-set-field
 function table.count(self)
 	local count = 0
 
@@ -349,6 +395,7 @@ end
 ---@param self table
 ---@param o any
 ---@return integer|string|nil
+---@diagnostic disable-next-line: duplicate-set-field
 function table.indexOf(self, o)
 	for i, v in pairs(self) do
 		if v == o then

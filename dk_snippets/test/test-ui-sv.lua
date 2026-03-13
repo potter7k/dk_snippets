@@ -12,6 +12,11 @@ CreateThread(function()
         end
     end
 
+    if not targetSource then
+        print("No players found, cannot test notifications and hints.")
+        return
+    end
+
     DkNotify(targetSource, NotifyModes.GREEN, "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.", 4000)
     DkNotify(targetSource, NotifyModes.RED, "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.", 4000)
     DkNotify(targetSource, NotifyModes.YELLOW, "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.", 4000)
@@ -22,7 +27,7 @@ CreateThread(function()
         infoIcon = true,
     })
 
-    local request = DkRequest(targetSource, "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.", 10)
+    local request = DkRequest(targetSource, "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.", 10, "Sim", "Não")
     print(request)
 
     DkHint(targetSource, "remove", "dk_snippets:client:test")

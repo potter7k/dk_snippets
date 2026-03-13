@@ -1,5 +1,9 @@
 ---@meta
 
+---@class Class
+---@field new fun(self: Class, ...: any): table
+---@field constructor fun(self: table, ...: any)
+
 --- `server`
 --- Detectar framework, e pegar funções
 ---@return string, FWData

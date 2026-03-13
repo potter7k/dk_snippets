@@ -19,7 +19,7 @@ shared_scripts {
 
 server_scripts {
     'src/server/*',
-    -- 'test/test-ui-sv.lua', -- Testar interfaces, descomente para usar
+    'test/*.lua', -- Testar interfaces, descomente para usar
     'src/server/framework/**/*'
 }
 

@@ -18,6 +18,9 @@
 ---@field getPlayersByPermission fun(perm: string): Player[]
 ---@field _custom? fun(...): any
 
+---@class FWManager
+---@field list table<string, fun(): string, FWData> Frameworks registrados.
+---@field versions table<string, fun(): FWData> Versões/variantes registradas.
 FW = {
     list = {},
     versions = {},
