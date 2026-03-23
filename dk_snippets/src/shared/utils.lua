@@ -85,8 +85,11 @@ end
 
 --- Função para criar classes com metatable.
 --- Retorna uma classe com suporte a herança, construtores e instanciação via `:new(...)`.
+--- Consulte a documentação completa em `Class`.
 ---
 --- ```lua
+--- ---@class Animal : Class
+--- ---@field name string
 --- local Animal = Class({ name = "Unknown" })
 ---
 --- function Animal:constructor(name)
@@ -99,34 +102,93 @@ end
 ---
 --- local dog = Animal:new("Rex")
 --- print(dog:greet()) -- Hi, I'm Rex
+---
+--- -- Herança
+--- ---@class Cat : Animal
+--- ---@field lives integer
+--- local Cat = Animal:extend({ lives = 9 })
+---
+--- function Cat:constructor(name)
+---     Animal.constructor(self, name)
+--- end
+---
+--- local cat = Cat:new("Mimi")
+--- print(cat:greet())            -- Hi, I'm Mimi
+--- print(cat.lives)              -- 9
+--- print(cat:instanceof(Animal)) -- true
 --- ```
 ---@generic T : table
 ---@param defaults T Tabela com propriedades e valores padrão da classe.
----@return T|{ new: fun(self: T, ...): T, constructor: fun(self: T, ...) }
-function Class(defaults)
+---@param parent? Class Classe pai para herança (use `:extend()` como alternativa).
+---@return T|Class class A nova classe criada.
+function Class(defaults, parent)
 	local class = {}
+	local defaultProps = {}
 
+	-- Herda métodos e defaults do pai
+	if parent then
+		for key, value in pairs(parent) do
+			class[key] = value
+		end
+
+		local parentDefaults = rawget(parent, "__defaults")
+		if parentDefaults then
+			for key, value in pairs(parentDefaults) do
+				defaultProps[key] = value
+			end
+		end
+	end
+
+	-- Aplica e registra os defaults da classe
 	for key, value in pairs(defaults or {}) do
 		class[key] = value
+		if type(value) ~= "function" then
+			defaultProps[key] = value
+		end
 	end
 
 	class.__index = class
+	class.__parent = parent
+	class.__defaults = defaultProps
 
+	--- Deep copy para evitar compartilhamento de referência entre instâncias.
+	local function deepCopy(val)
+		if type(val) ~= "table" then return val end
+		local copy = {}
+		for k, v in pairs(val) do
+			copy[k] = deepCopy(v)
+		end
+		return setmetatable(copy, getmetatable(val))
+	end
+
+	--- Cria uma nova instância da classe.
 	function class:new(...)
 		local obj = setmetatable({}, self)
 
-		for key, value in pairs(self) do
-			if key ~= "__index" and key ~= "new" and type(value) ~= "function" then
-				obj[key] = value
-			end
+		for key, value in pairs(self.__defaults) do
+			obj[key] = deepCopy(value)
 		end
 
-		-- Chama o construtor se existir
 		if obj.constructor then
 			obj:constructor(...)
 		end
 
 		return obj
+	end
+
+	--- Cria uma subclasse que herda desta classe.
+	function class:extend(childDefaults)
+		return Class(childDefaults, self)
+	end
+
+	--- Verifica se o objeto é instância de uma determinada classe.
+	function class:instanceof(klass)
+		local current = getmetatable(self)
+		while current do
+			if current == klass then return true end
+			current = current.__parent
+		end
+		return false
 	end
 
 	return class
@@ -314,9 +376,10 @@ end
 --- Map a function to each element in a table and optionally prevent indexing.
 ---@param self table
 ---@param func function
----@param preventIndex boolean
+---@param preventIndex? boolean
 ---@return table
 function table.map(self, func, preventIndex)
+	preventIndex = preventIndex and true or false
 	local response = {}
 
 	for key, value in pairs(self) do
@@ -343,10 +406,10 @@ end
 --- Find elements in a table that match a function's criteria.
 ---@param self table
 ---@param func function
----@param keepIndex boolean
+---@param keepIndex? boolean
 ---@return table
 function table.find(self, func, keepIndex)
-	keepIndex = keepIndex == true and true or false
+	keepIndex = keepIndex and true or false
 	local ret = {}
 	for key, value in pairs(self) do
 		if func(value, key) then
@@ -403,4 +466,11 @@ function table.indexOf(self, o)
 		end
 	end
 	return nil
+end
+
+---@param self table
+---@param value string | number | boolean
+---@return boolean
+function table.contains(self, value)
+	return table.indexOf(self, value) ~= nil
 end

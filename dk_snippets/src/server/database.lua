@@ -99,7 +99,7 @@ end
 --- Insert data into a table.
 ---@param tableName string The name of the table.
 ---@param data table The data to insert.
----@param operation string The SQL operation to perform (default is 'INSERT').
+---@param operation? string The SQL operation to perform (default is 'INSERT').
 ---@return table
 function SQL.insert(tableName, data, operation)
     assert(type(tableName) == 'string', "Table name deve ser uma string")
