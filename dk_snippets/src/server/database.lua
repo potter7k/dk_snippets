@@ -318,28 +318,21 @@ end)
 
 --- Load the tables and their columns from the database.
 local function loadTables()
-    -- Opção mais leve: usa SHOW TABLES + DESCRIBE ao invés de information_schema
-    -- information_schema pode ser lenta em bancos com muitas tabelas
-    local tableList = SQL.silent("SHOW TABLES")
-    
-    if not tableList or #tableList == 0 then
+    local rows = SQL.silent("SELECT TABLE_NAME, COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE()")
+
+    if not rows or #rows == 0 then
         print("[SQL Warning] Nenhuma tabela encontrada no banco de dados.")
         return
     end
 
-    for _, row in ipairs(tableList) do
-        -- SHOW TABLES retorna uma coluna com nome variável baseado no banco
-        local tableName = row[next(row)]
-        
-        if tableName then
-            SQL.tables[tableName] = {}
-            
-            local columns = SQL.silent("SHOW COLUMNS FROM `" .. tableName .. "`")
-            if columns then
-                for _, col in ipairs(columns) do
-                    SQL.tables[tableName][col.Field] = true
-                end
+    for _, row in ipairs(rows) do
+        local tableName = row.TABLE_NAME
+        local columnName = row.COLUMN_NAME
+        if tableName and columnName then
+            if not SQL.tables[tableName] then
+                SQL.tables[tableName] = {}
             end
+            SQL.tables[tableName][columnName] = true
         end
     end
 end
