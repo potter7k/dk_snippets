@@ -5,29 +5,27 @@ author 'potter7k'
 description 'Scripts desenvolvidos por DK Development. Discord: https://discord.gg/NJjUn8Ad3P'
 
 lua54 'yes'
-
-version '2.3.0'
+version '3.0.0'
 
 ui_page 'web/index.html'
 
-shared_scripts {
-    'src/shared/utils.lua',
-    'src/shared/require.lua',
-    'src/shared/callbacks.lua',
-    'src/shared/cooldowns.lua'
+shared_script 'init.lua'
+
+client_scripts {
+    'runtime/client/*'
 }
 
 server_scripts {
-    'src/server/*',
-    -- 'test/*.lua', -- Testes, descomente para rodar
-    'src/server/framework/**/*'
-}
-
-client_scripts {
-    'src/client/*'
+    -- 'test/*.lua', -- Testes; descomente para rodar
+    'runtime/server/*'
 }
 
 files {
+    'init.lua',
+    'snippets.lua',
+    'lib/*.lua',
+    'compat/*.lua',
+    'modules/**/*.lua',
     'web/*',
     'web/**/*',
     'web/**/**/*'
