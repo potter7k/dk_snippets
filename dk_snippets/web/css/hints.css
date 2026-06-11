@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════
-   HINTS
+   HINTS — vidro fumê compacto
    ═══════════════════════════════════════ */
 
 #hints {
@@ -17,88 +17,82 @@
 }
 
 .hints__container {
-    background: linear-gradient(165deg, #131317 0%, #111118 40%, #14142a 100%);
-    border: 1px solid rgba(99, 102, 241, 0.10);
-    color: var(--text-primary);
-
+    position: relative;
+    background:
+        radial-gradient(140% 120% at 85% -10%, rgba(var(--acc), .09) 0%, transparent 45%),
+        var(--glass-bg);
+    color: var(--text-hint);
     max-width: 400px;
-    padding: 12px 18px;
+    padding: 6px 13px 6px 7px;
     margin-top: 8px;
-
-    border-radius: 12px;
+    border-radius: var(--radius-hint);
     align-self: flex-end;
     align-items: center;
-
     display: flex;
-
+    gap: 9px;
+    overflow: hidden;
     box-shadow:
-        0 16px 48px rgba(0, 0, 0, 0.4),
-        0 4px 12px rgba(0, 0, 0, 0.2),
-        inset 0 1px 0 rgba(255, 255, 255, 0.04);
+        0 0 0 1px rgba(var(--acc), .15),
+        0 16px 38px rgba(0, 0, 0, .5),
+        inset 0 1px 0 rgba(var(--acc), .13);
+}
+
+/* linha de luz no topo do vidro */
+.hints__container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 12%;
+    right: 12%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(var(--acc), .5), transparent);
+    pointer-events: none;
 }
 
 .hints__container p {
-    font-size: 0.78rem;
+    font-size: 11.5px;
     font-weight: 400;
-    color: var(--text-primary);
+    color: var(--text-hint);
     word-wrap: break-word;
-    line-height: 1.4;
+    line-height: 1.45;
 }
 
+/* keycap da tecla */
 .hint-control {
-    font-size: 0.72rem;
+    font-size: 10.5px;
     font-weight: 700;
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.18), rgba(99, 102, 241, 0.06));
-    color: rgba(199, 210, 254, 0.9);
-    padding: 5px 10px;
-    border: 1px solid rgba(99, 102, 241, 0.20);
-    border-radius: 8px;
-    margin-right: 10px;
+    background: linear-gradient(180deg, rgba(var(--acc), .22), rgba(var(--acc), .08));
+    color: rgb(var(--acc-text));
+    padding: 3px 8px;
+    border-radius: 6px;
+    box-shadow:
+        0 0 0 1px rgba(var(--acc), .38),
+        inset 0 1px 0 rgba(255, 255, 255, .18);
     white-space: nowrap;
-    line-height: 1;
+    line-height: 1.2;
 }
 
 .hint-description {
-    color: var(--text-secondary) !important;
+    color: var(--text-hint);
 }
 
-/* — Info Icon — */
+/* ícone de info */
 .hint-info-icon {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.18), rgba(99, 102, 241, 0.06));
-    border: 1px solid rgba(99, 102, 241, 0.20);
-    border-radius: 8px;
-    padding: 4px;
-    margin-right: 10px;
-    color: rgba(165, 180, 252, 0.9);
+    width: 20px;
+    height: 20px;
+    flex: none;
+    background: linear-gradient(180deg, rgba(var(--acc), .20), rgba(var(--acc), .07));
+    box-shadow:
+        0 0 0 1px rgba(var(--acc), .35),
+        inset 0 1px 0 rgba(255, 255, 255, .15);
+    border-radius: 6px;
+    color: rgb(var(--acc-text));
 }
 
 .hint-info-icon svg {
-    width: 14px;
-    height: 14px;
-}
-
-/* — Animations — */
-@keyframes animate_fade_in_grow {
-    0% {
-        opacity: 0;
-        transform: scale(0.85) translateY(8px);
-    }
-    100% {
-        opacity: 1;
-        transform: scale(1) translateY(0);
-    }
-}
-
-@keyframes animate_fade_out_grow {
-    0% {
-        opacity: 1;
-        transform: scale(1) translateY(0);
-    }
-    100% {
-        opacity: 0;
-        transform: scale(0.85) translateY(8px);
-    }
+    width: 12px;
+    height: 12px;
 }
