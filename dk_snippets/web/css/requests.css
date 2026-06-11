@@ -1,12 +1,6 @@
 /* ═══════════════════════════════════════
-   REQUESTS
+   REQUESTS — vidro fumê compacto
    ═══════════════════════════════════════ */
-
-:root {
-    --request-bg: linear-gradient(165deg, #131317 0%, #111118 40%, #14142a 100%);
-    --request-border: rgba(99, 102, 241, 0.12);
-    --request-progress: #6366f1;
-}
 
 #requests {
     width: 100%;
@@ -19,140 +13,146 @@
 }
 
 .requests__container {
-    background-color: var(--bg-base);
-    background: var(--request-bg);
+    position: relative;
+    background:
+        radial-gradient(140% 120% at 85% -10%, rgba(var(--acc), .09) 0%, transparent 45%),
+        var(--glass-bg);
     color: var(--text-primary);
-
-    width: 320px;
+    width: 290px;
     max-height: 300px;
-    padding: 16px;
-
-    border-radius: 14px;
-    border: 1px solid var(--request-border);
+    padding: 13px 14px;
+    border-radius: var(--radius);
     align-self: flex-end;
     margin-bottom: 1rem;
-
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    position: relative;
-
     box-shadow:
-        0 24px 48px rgba(0, 0, 0, 0.4),
-        0 4px 12px rgba(0, 0, 0, 0.2),
-        inset 0 1px 0 rgba(255, 255, 255, 0.04),
-        inset 0 0 0 0.5px rgba(255, 255, 255, 0.02);
+        0 0 0 1px rgba(var(--acc), .15),
+        0 16px 38px rgba(0, 0, 0, .5),
+        inset 0 1px 0 rgba(var(--acc), .13);
+}
+
+/* linha de luz no topo do vidro */
+.requests__container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 12%;
+    right: 12%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(var(--acc), .5), transparent);
+    pointer-events: none;
 }
 
 /* — Header — */
 .requests__container__header {
     width: 100%;
-    padding: 0 0 10px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: baseline;
 }
 
 .requests__container__header h1 {
-    color: rgba(255, 255, 255, 0.85);
-    font-size: 0.85rem;
+    color: var(--text-primary);
+    font-size: 12.5px;
     font-weight: 700;
-    letter-spacing: 0.2px;
 }
 
 .requests__container__header h2 {
-    color: rgba(255, 255, 255, 0.20);
-    font-size: 0.78rem;
-    font-weight: 500;
+    color: rgba(var(--acc), .85);
+    font-size: 11px;
+    font-weight: 600;
 }
 
-/* — Description — */
+/* — Descrição — */
 .requests__container__description {
-    padding: 10px 0;
+    padding: 7px 0 10px;
     flex-grow: 1;
 }
 
 .requests__container__description p {
-    font-size: 0.78rem;
+    font-size: 11.5px;
     color: var(--text-secondary);
     line-height: 1.5;
 }
 
-/* — Progress bar — */
+/* — Barra de progresso — */
 .requests__container__progress {
     width: 100%;
-    height: 2px;
-    background-color: rgba(255, 255, 255, 0.04);
-    border-radius: 2px;
-    margin-bottom: 12px;
+    height: 3px;
+    background-color: rgba(255, 255, 255, .07);
+    border-radius: 3px;
+    margin-bottom: 10px;
     overflow: hidden;
 }
 
 .requests__container__progress__bar {
     height: 100%;
     width: 100%;
-    background-color: var(--request-progress);
-    border-radius: 2px;
+    background: rgb(var(--acc));
+    box-shadow: 0 0 10px rgba(var(--acc), .5);
+    border-radius: 3px;
     transition: width 1s linear;
 }
 
-/* — Buttons — */
+/* — Botões — */
 .requests__container__buttons {
     display: flex;
+    gap: 8px;
 }
 
 .requests__container__buttons button {
-    font-family: "Inter", sans-serif;
-    font-size: 0.78rem;
-    font-weight: 600;
-    flex-grow: 1;
+    font-family: var(--font);
+    font-size: 11.5px;
+    font-weight: 700;
+    flex: 1;
     border: none;
     outline: none;
-    padding: 10px 0;
-    border-radius: 10px;
+    padding: 7px 0;
+    border-radius: 7px;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    margin: 0 4px;
+    transition: all .25s ease;
 }
 
-.requests__container__buttons button:first-child {
-    margin-left: 0;
-}
-
-.requests__container__buttons button:last-child {
-    margin-right: 0;
-}
-
-/* Deny button */
+/* Recusar — neutro */
 .requests__container__buttons button#request-deny {
-    background-color: rgba(255, 255, 255, 0.03);
-    color: rgba(255, 255, 255, 0.45);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, .04);
+    box-shadow:
+        0 0 0 1px rgba(255, 255, 255, .10),
+        inset 0 1px 0 rgba(255, 255, 255, .06);
+    color: #9aa3b5;
 }
 
 .requests__container__buttons button#request-deny:hover,
 .requests__container__buttons button#request-deny.hover-effect {
-    background-color: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.10);
+    background: rgba(255, 255, 255, .08);
+    box-shadow:
+        0 0 0 1px rgba(255, 255, 255, .16),
+        inset 0 1px 0 rgba(255, 255, 255, .08);
     color: var(--text-primary);
 }
 
-/* Accept button */
+/* Aceitar — vidro gelo */
 .requests__container__buttons button#request-accept {
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.28), rgba(79, 70, 229, 0.18));
-    border: 1px solid rgba(99, 102, 241, 0.22);
-    color: rgba(199, 210, 254, 0.9);
+    background: linear-gradient(180deg, rgba(var(--acc), .30), rgba(var(--acc), .14));
+    box-shadow:
+        0 0 0 1px rgba(var(--acc), .42),
+        inset 0 1px 0 rgba(255, 255, 255, .18),
+        0 6px 18px rgba(var(--acc), .16);
+    color: rgb(var(--acc-text));
 }
 
 .requests__container__buttons button#request-accept:hover,
 .requests__container__buttons button#request-accept.hover-effect {
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.35), rgba(79, 70, 229, 0.24));
-    border-color: rgba(99, 102, 241, 0.32);
-    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.12);
+    background: linear-gradient(180deg, rgba(var(--acc), .40), rgba(var(--acc), .22));
+    box-shadow:
+        0 0 0 1px rgba(var(--acc), .55),
+        inset 0 1px 0 rgba(255, 255, 255, .22),
+        0 8px 22px rgba(var(--acc), .24);
 }
 
-/* — Animations — */
+/* — Animações (nomes referenciados pelo request-handler.js) — */
 .animate_fade_in_grow {
     animation: animate_fade_in_grow 0.35s ease-out;
 }
