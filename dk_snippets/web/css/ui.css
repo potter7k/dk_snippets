@@ -1,220 +1,181 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 @import "./requests.css";
 @import "./hints.css";
 
 :root {
-    --bg-base: #131317;
-    --bg-darker: #0e0e12;
-    --text-primary: #f0f0f5;
-    --text-secondary: #a1a1aa;
-    --text-dim: #52525b;
-    --border-subtle: rgba(255, 255, 255, 0.06);
-    --accent: 99, 102, 241;
+    /* identidade */
+    --font: 'Plus Jakarta Sans', sans-serif;
+    --acc: 126, 166, 255;        /* azul-gelo (triplet para rgba()) */
+    --acc-text: 219, 230, 255;
 
-    /* Success */
-    --success-color: #22c55e;
-    --success-bg: linear-gradient(165deg, #131317 0%, #0a1f15 50%, #0e2a1a 100%);
-    --success-border: rgba(34, 197, 94, 0.15);
+    /* texto */
+    --text-primary: #eef2fa;
+    --text-secondary: #97a1b5;
+    --text-hint: #c5cddd;
 
-    /* Danger */
-    --danger-color: #ef4444;
-    --danger-bg: linear-gradient(165deg, #131317 0%, #1f0a0a 50%, #2a0e0e 100%);
-    --danger-border: rgba(239, 68, 68, 0.15);
+    /* estados — ícone e barra de progresso do notify */
+    --st-success: 94, 222, 128;   /* NotifyModes.GREEN */
+    --st-danger: 248, 113, 113;   /* NotifyModes.RED */
+    --st-warning: 250, 204, 21;   /* NotifyModes.YELLOW */
+    --st-info: 126, 166, 255;     /* NotifyModes.BLUE */
 
-    /* Warning */
-    --warning-color: #eab308;
-    --warning-bg: linear-gradient(165deg, #131317 0%, #1f1a0a 50%, #2a220e 100%);
-    --warning-border: rgba(234, 179, 8, 0.15);
-
-    /* Blue / Info */
-    --blue-color: #6366f1;
-    --blue-bg: linear-gradient(165deg, #131317 0%, #0e0e1f 50%, #12122a 100%);
-    --blue-border: rgba(99, 102, 241, 0.15);
+    /* superfícies */
+    --glass-bg: linear-gradient(180deg, rgba(22, 26, 34, .88) 0%, rgba(10, 12, 17, .92) 100%);
+    --radius: 10px;
+    --radius-hint: 9px;
 }
 
 * {
-  box-sizing: border-box;
-  user-select: none;
-  outline: none;
-  margin: 0;
-  padding: 0;
+    box-sizing: border-box;
+    user-select: none;
+    outline: none;
+    margin: 0;
+    padding: 0;
 }
 
 body {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  font-family: "Inter", sans-serif;
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  -khtml-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: var(--font);
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 /* ═══════════════════════════════════════
-   NOTIFY CONTAINER
+   NOTIFY — container
    ═══════════════════════════════════════ */
 
 .defaultNotify {
-  overflow: hidden;
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: "Inter", sans-serif;
-  user-select: none;
-  outline: none;
-  width: 100%;
-  height: 100%;
-  color: var(--text-primary);
-  position: absolute;
-  pointer-events: none;
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+    color: var(--text-primary);
+    position: absolute;
+    pointer-events: none;
 }
 
 .defaultNotify .defaultNotifySide {
-  position: absolute;
-  top: 15vh;
-  right: 1.5vw;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
+    position: absolute;
+    top: 15vh;
+    right: 1.5vw;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
 }
 
 /* ═══════════════════════════════════════
-   INDIVIDUAL NOTIFY CARD
+   NOTIFY — card (vidro fumê)
    ═══════════════════════════════════════ */
 
+/* default da cor de estado em especificidade (0,1,0) — as variantes abaixo,
+   de mesma especificidade, vencem por ordem no arquivo */
+.currentNotify {
+    --st: var(--st-info);
+}
+
 .defaultNotify .currentNotify {
-  position: relative;
-  margin-top: 0.6rem;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  background: linear-gradient(165deg, var(--bg-base) 0%, var(--bg-darker) 100%);
-  padding: 16px 20px;
-  color: var(--text-primary);
-  width: auto;
-  max-width: 380px;
-  min-width: 280px;
-  overflow: hidden;
-  border: 1px solid var(--border-subtle);
-  box-shadow:
-    0 16px 48px rgba(0, 0, 0, 0.4),
-    0 4px 12px rgba(0, 0, 0, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    position: relative;
+    margin-top: 0.6rem;
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background:
+        radial-gradient(140% 120% at 85% -10%, rgba(var(--acc), .09) 0%, transparent 45%),
+        var(--glass-bg);
+    padding: 10px 14px 12px;
+    color: var(--text-primary);
+    min-width: 280px;
+    max-width: 330px;
+    overflow: hidden;
+    box-shadow:
+        0 0 0 1px rgba(var(--acc), .15),
+        0 16px 38px rgba(0, 0, 0, .5),
+        inset 0 1px 0 rgba(var(--acc), .13);
 }
 
-/* — Type variants — */
-.currentNotify--success {
-  background: var(--success-bg) !important;
-  border-color: var(--success-border) !important;
-}
-.currentNotify--danger {
-  background: var(--danger-bg) !important;
-  border-color: var(--danger-border) !important;
-}
-.currentNotify--warning {
-  background: var(--warning-bg) !important;
-  border-color: var(--warning-border) !important;
-}
-.currentNotify--blue {
-  background: var(--blue-bg) !important;
-  border-color: var(--blue-border) !important;
+/* linha de luz no topo do vidro */
+.defaultNotify .currentNotify::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 12%;
+    right: 12%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(var(--acc), .5), transparent);
+    pointer-events: none;
 }
 
-/* — Icon circle — */
+/* variantes: apenas trocam a cor de estado (vidro permanece gelo) */
+.currentNotify--success { --st: var(--st-success); }
+.currentNotify--danger  { --st: var(--st-danger); }
+.currentNotify--warning { --st: var(--st-warning); }
+.currentNotify--blue    { --st: var(--st-info); }
+
 .notifyIcon {
-  width: 28px;
-  height: 28px;
-  min-width: 28px;
-  min-height: 28px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 14px;
-  font-size: 12px;
-  font-weight: 700;
-  color: #fff;
-  line-height: 1;
+    width: 26px;
+    height: 26px;
+    min-width: 26px;
+    min-height: 26px;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+    color: rgb(var(--st));
+    background: linear-gradient(180deg, rgba(var(--st), .18), rgba(var(--st), .05));
+    box-shadow:
+        0 0 0 1px rgba(var(--st), .30),
+        0 0 16px rgba(var(--st), .16),
+        inset 0 1px 0 rgba(255, 255, 255, .12);
 }
 
-.currentNotify--success .notifyIcon {
-  background: linear-gradient(135deg, rgba(34, 197, 94, 0.22), rgba(34, 197, 94, 0.08));
-  border: 1px solid rgba(34, 197, 94, 0.20);
-  color: var(--success-color);
-}
-.currentNotify--danger .notifyIcon {
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.22), rgba(239, 68, 68, 0.08));
-  border: 1px solid rgba(239, 68, 68, 0.20);
-  color: var(--danger-color);
-}
-.currentNotify--warning .notifyIcon {
-  background: linear-gradient(135deg, rgba(234, 179, 8, 0.22), rgba(234, 179, 8, 0.08));
-  border: 1px solid rgba(234, 179, 8, 0.20);
-  color: var(--warning-color);
-}
-.currentNotify--blue .notifyIcon {
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.22), rgba(99, 102, 241, 0.08));
-  border: 1px solid rgba(99, 102, 241, 0.20);
-  color: var(--blue-color);
-}
-
-/* — Text — */
 .defaultNotify .currentNotify .notifyRightSide {
-  display: flex;
-  flex-direction: column;
+    display: flex;
+    flex-direction: column;
 }
 
 .defaultNotify .currentNotify .notifyRightSide h1 {
-  margin: 0;
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.85);
-  line-height: 1.3;
-  letter-spacing: 0.2px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.3;
 }
 
 .defaultNotify .currentNotify .notifyRightSide p {
-  margin: 3px 0 0 0;
-  font-weight: 400;
-  font-size: 0.78rem;
-  color: var(--text-secondary);
-  line-height: 1.4;
+    margin-top: 1px;
+    font-weight: 400;
+    font-size: 11px;
+    color: var(--text-secondary);
+    line-height: 1.45;
 }
 
-/* — Progress bar — */
+/* ═══════════════════════════════════════
+   NOTIFY — barra de progresso
+   ═══════════════════════════════════════ */
+
 .notifyProgress {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  height: 2px;
-  width: 100%;
-  border-radius: 0 0 10px 10px;
-  overflow: hidden;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 2px;
+    width: 100%;
+    overflow: hidden;
 }
 
 .notifyProgress__bar {
-  height: 100%;
-  width: 100%;
-  transform-origin: left;
-}
-
-.currentNotify--success .notifyProgress__bar {
-  background-color: var(--success-color);
-}
-.currentNotify--danger .notifyProgress__bar {
-  background-color: var(--danger-color);
-}
-.currentNotify--warning .notifyProgress__bar {
-  background-color: var(--warning-color);
-}
-.currentNotify--blue .notifyProgress__bar {
-  background-color: var(--blue-color);
+    height: 100%;
+    width: 100%;
+    transform-origin: left;
+    background: rgb(var(--st));
+    opacity: .75;
+    border-radius: 0 2px 2px 0;
 }
 
 @keyframes notifyProgressShrink {
-  from { width: 100%; }
-  to { width: 0%; }
+    from { width: 100%; }
+    to { width: 0%; }
 }
