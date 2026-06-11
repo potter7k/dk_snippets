@@ -1,8 +1,12 @@
----@meta @dk_snippets/snippets
+---@meta
 
 -- Definições LuaLS do dk_snippets (somente editor; o runtime nunca carrega este
--- arquivo — ele NÃO está no fxmanifest). O nome no @meta faz o LuaLS casar
--- `require '@dk_snippets/snippets'` com este arquivo e devolver `dk.snippets`.
+-- arquivo — ele NÃO está no fxmanifest).
+--
+-- USO NOS CONSUMIDORES: o LuaLS não resolve a convenção `@recurso/` do FiveM,
+-- então anote o require explicitamente (uma linha):
+--   ---@type dk.snippets
+--   local snippets = require '@dk_snippets/snippets'
 --
 -- MANUTENÇÃO: ao criar um módulo novo são 3 toques:
 --   1. entrada no `map` do snippets.lua
@@ -66,7 +70,7 @@ function class:constructor(...) end
 ---@field _custom? fun(name: string, ...): any
 
 --- Agregador retornado por `require '@dk_snippets/snippets'`.
---- Os tipos dos campos vivem nos próprios módulos (modules/**).
+--- Os tipos dos campos vivem nos próprios módulos (pasta modules/).
 ---@class dk.snippets
 ---@field table dk.table          # helpers de tabela (isolados da table nativa)
 ---@field string dk.string        # helpers de string

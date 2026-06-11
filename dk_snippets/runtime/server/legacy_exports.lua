@@ -3,6 +3,7 @@
 -- exports['dk_snippets']:request()/:framework()/:DB() (modelo 2.x).
 -- Deletável quando os consumidores forem migrados para a API v3.
 -- Spec: docs/superpowers/specs/2026-06-10-dk-snippets-compat-encriptados-design.md
+---@type dk.snippets
 local snippets = require '@dk_snippets/snippets'
 
 -- request(source, description, timer?, acceptText?, denyText?) → boolean

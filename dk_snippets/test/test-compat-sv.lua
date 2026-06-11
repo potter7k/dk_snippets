@@ -1,6 +1,7 @@
 -- TESTES — Shim de compatibilidade (compat/dk_snippets_compat.lua)
 -- Carrega o shim num ambiente isolado e confere a superfície da API antiga
 -- consumida pelos scripts encriptados (dk_races, dk_animations_ext, dk_trunkin, dk_lapdance).
+---@diagnostic disable: undefined-field, inject-field -- testes sondam campos dinamicamente
 ---@diagnostic disable: missing-return, missing-return-value
 local passed, failed, total = 0, 0, 0
 local function check(name, cond)
