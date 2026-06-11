@@ -1,93 +1,89 @@
----@meta
+---@meta @dk_snippets/snippets
 
---- Classe base criada por `Class()`.
+-- Definições LuaLS do dk_snippets (somente editor; o runtime nunca carrega este
+-- arquivo — ele NÃO está no fxmanifest). O nome no @meta faz o LuaLS casar
+-- `require '@dk_snippets/snippets'` com este arquivo e devolver `dk.snippets`.
+--
+-- MANUTENÇÃO: ao criar um módulo novo são 3 toques:
+--   1. entrada no `map` do snippets.lua
+--   2. `---@field` na classe dk.snippets abaixo
+--   3. `---@class`/`---@alias` no próprio módulo (fonte da verdade do tipo)
+
+--- Classe base criada por `snippets.class(...)`.
 --- Todas as classes criadas herdam esses métodos automaticamente.
----
---- ### Criando uma classe
---- ```lua
---- ---@class Animal : Class
---- ---@field name string
---- local Animal = Class({ name = "Unknown" })
----
---- function Animal:constructor(name)
----     self.name = name
---- end
----
---- function Animal:greet()
----     return "Hi, I'm " .. self.name
---- end
----
---- local dog = Animal:new("Rex")
---- print(dog:greet()) -- Hi, I'm Rex
---- ```
----
---- ### Herança com `extend`
---- ```lua
---- ---@class Cat : Animal
---- ---@field lives integer
---- local Cat = Animal:extend({ lives = 9 })
----
---- function Cat:constructor(name)
----     Animal.constructor(self, name)
---- end
----
---- local cat = Cat:new("Mimi")
---- print(cat:greet())            -- Hi, I'm Mimi
---- print(cat.lives)              -- 9
---- print(cat:instanceof(Animal)) -- true
---- ```
 ---@class Class
 local class = {}
 
---- Cria uma nova instância da classe.
---- Chama `constructor(...)` automaticamente se definido.
+--- Cria uma nova instância da classe. Chama `constructor(...)` se definido.
 ---@generic T
 ---@param self T
----@param ... any Argumentos passados ao `constructor`.
----@return T instance Nova instância da classe.
+---@param ... any
+---@return T instance
 function class:new(...) end
 
 --- Cria uma subclasse que herda métodos e defaults desta classe.
 ---@generic T
 ---@param self T
----@param defaults? table Propriedades e valores padrão da subclasse.
----@return T|Class child Subclasse com herança completa.
+---@param defaults? table
+---@return T|Class child
 function class:extend(defaults) end
 
---- Verifica se o objeto é instância de uma determinada classe (percorre a cadeia de herança).
----@param klass table A classe a ser verificada.
----@return boolean isInstance `true` se o objeto descende da classe informada.
+--- Verifica se o objeto é instância de uma determinada classe.
+---@param klass table
+---@return boolean
 function class:instanceof(klass) end
 
---- Construtor da classe. Sobrescreva nas suas classes para inicializar propriedades.
---- Chamado automaticamente por `:new(...)`.
----@param ... any Argumentos recebidos de `:new(...)`.
+--- Construtor da classe. Sobrescreva nas suas classes.
+---@param ... any
 function class:constructor(...) end
 
---- Cria uma nova classe com suporte a herança, construtores e instanciação.
----
---- ### Uso básico
---- ```lua
---- ---@class MyClass : Class
---- ---@field hp number
---- local MyClass = Class({ hp = 100 })
----
---- function MyClass:constructor(hp)
----     self.hp = hp
---- end
---- ```
----@generic T : table
----@param defaults T Tabela com propriedades e valores padrão da classe.
----@param parent? Class Classe pai para herança (use `:extend()` como alternativa).
----@return T|Class class A nova classe criada.
-function Class(defaults, parent) end
+--- Objeto de jogador retornado pelo framework.
+--- Os campos `notify`/`hint`/`request` só existem quando `online == true`
+--- (açúcar injetado pelo framework, já conhecendo a source).
+---@class Player
+---@field online boolean
+---@field userId fun(): string|integer|nil
+---@field userSource fun(): integer
+---@field isAdmin fun(): boolean
+---@field hasPermission fun(permission: string): boolean
+---@field paymentBank fun(amount: integer): boolean
+---@field giveBank fun(amount: integer): boolean
+---@field paymentCash? fun(amount: integer): boolean
+---@field giveCash? fun(amount: integer): boolean
+---@field itemAmount fun(item: string): integer
+---@field takeItem fun(item: string, amount: integer, notify: boolean): boolean
+---@field giveItem fun(item: string, amount: integer, notify: boolean)
+---@field notify fun(mode: string, message: string, duration?: number) Açúcar (online): notifica este jogador.
+---@field hint fun(action: string, id: string, description: string, control?: string, configs?: table) Açúcar (online).
+---@field request fun(description: string, timer?: number, acceptText?: string, denyText?: string): boolean Açúcar (online).
 
---- `server`
---- Detectar framework, e pegar funções
----@return string, FWData
-function exports.dk_snippets:framework() end
+--- Tabela de funções do framework detectado (retorno de `snippets.framework`).
+---@class FWData
+---@field getFramework fun(): string
+---@field getPlayer fun(source: integer): Player
+---@field getPlayerById fun(user_id: string|integer): Player
+---@field getPlayersByPermission fun(perm: string): Player[]
+---@field _custom? fun(name: string, ...): any
 
---- `server`
---- Pegar funções driver banco de dados
---- @return SQL
-function exports.dk_snippets:DB() end
+--- Agregador retornado por `require '@dk_snippets/snippets'`.
+--- Os tipos dos campos vivem nos próprios módulos (modules/**).
+---@class dk.snippets
+---@field table dk.table          # helpers de tabela (isolados da table nativa)
+---@field string dk.string        # helpers de string
+---@field number dk.number        # ParseInt / Round
+---@field class dk.class          # construtor de classes com herança
+---@field cooldown Cooldown       # classe de cooldown (use :new(segundos))
+---@field callbacks dk.callbacks  # callbacks client<->server
+---@field notify dk.notify        # notify/hint (lado-ciente)
+---@field request dk.request      # confirmação com UI (lado-ciente)
+---@field json JSON               # storage JSON em arquivo (server-only)
+---@field db fun(): SQL           # driver SQL (server-only)
+---@field framework FWData        # framework detectado, players decorados (server-only)
+local snippets
+
+--- Requer um módulo do dk_snippets ou outro recurso (polyfill ox_lib).
+---@param modName string
+---@return any
+function require(modName) end
+
+return snippets
