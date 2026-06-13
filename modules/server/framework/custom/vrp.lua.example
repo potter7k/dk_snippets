@@ -1,0 +1,33 @@
+-- ============================================================================
+-- dk_snippets — Customização do framework vRP (TODAS as variantes)
+-- Copie para `vrp.lua` e edite. Carregado para qualquer variante vRP detectada
+-- (crnetwork, crv3, crv5, vrpex). Seu `vrp.lua` não é versionado.
+--
+-- Dica: se precisar distinguir a variante, use fw.getFramework() — retorna,
+-- por exemplo, "vrp.crv3".
+-- ============================================================================
+return {
+    functions = {
+        -- Exemplo: chama uma função arbitrária do vRP via o proxy interno
+        -- (fw._custom encaminha para vRP[nome](...))
+        getCustomData = function(fw, source)
+            local player = fw.getPlayer(source)
+            if not player.online then return nil end
+            -- exemplo de uso do _custom para chamar uma função qualquer do vRP:
+            return fw._custom('getUserData', player.userId())
+        end,
+    },
+
+    player = {
+        -- Exemplo: override de giveBank com log
+        giveBank = function(player, amount)
+            print(('[vrp custom] giveBank %s para user %s'):format(amount, player.userId()))
+            return player.__original.giveBank(amount)
+        end,
+        isAdmin = function(player)
+            local result = player.__original.isAdmin()
+            print('[vrp custom] isAdmin', player.userId(), result)
+            return result
+        end
+    },
+}

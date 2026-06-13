@@ -1,0 +1,25 @@
+-- ============================================================================
+-- dk_snippets — Customização do fallback "sem framework" (_nofw)
+-- Copie para `nofw.lua` e edite. Carregado quando NENHUM framework é detectado.
+--
+-- Útil se o seu servidor não usa ESX/QBCore/vRP mas tem o próprio sistema de
+-- dinheiro/itens: implemente aqui os métodos que o nofw deixa como stub
+-- (paymentBank, giveBank, itemAmount, takeItem, giveItem).
+-- ============================================================================
+return {
+    functions = {},
+
+    player = {
+        -- Exemplo: integra com um inventário/economia custom do servidor.
+        -- (substitua exports['meu_inventario'] pelo seu recurso real)
+        itemAmount = function(player, item)
+            return exports['meu_inventario']:getItemCount(player.userSource(), item) or 0
+        end,
+        giveItem = function(player, item, amount, notify)
+            exports['meu_inventario']:addItem(player.userSource(), item, amount)
+        end,
+        takeItem = function(player, item, amount, notify)
+            return exports['meu_inventario']:removeItem(player.userSource(), item, amount)
+        end,
+    },
+}

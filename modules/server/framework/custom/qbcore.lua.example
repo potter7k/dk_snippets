@@ -1,0 +1,23 @@
+-- ============================================================================
+-- dk_snippets — Customização do framework QBCore
+-- Copie para `qbcore.lua` e edite. Carregado só quando QBCore é detectado.
+-- Seu `qbcore.lua` não é versionado (sobrevive a updates).
+-- ============================================================================
+return {
+    functions = {
+        -- Exemplo: snippets.framework.getVip(source)
+        getVip = function(fw, source)
+            local player = fw.getPlayer(source)
+            return player.online and player.hasPermission('vip') or false
+        end,
+    },
+
+    player = {
+        -- QBCore já tem getJob/getGang/hasJob/isOnDuty por padrão.
+        -- Exemplo: adiciona um atalho
+        isPolice = function(player)
+            local job = player.__original.getJob and player.__original.getJob()
+            return job and job.name == 'police' or false
+        end,
+    },
+}

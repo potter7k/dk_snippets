@@ -1,0 +1,38 @@
+-- ============================================================================
+-- dk_snippets — Customização do framework ESX
+-- ----------------------------------------------------------------------------
+-- COMO USAR:
+--   1. Copie este arquivo para `esx.lua` (na mesma pasta).
+--   2. Edite o `esx.lua` (este `.example` é só referência; não é carregado).
+--   3. Seu `esx.lua` NÃO é versionado (gitignore), então sobrevive a updates.
+--
+-- Este arquivo é carregado SOMENTE quando o ESX é o framework detectado.
+-- ============================================================================
+return {
+    -- Funções de nível FW: substituem/adicionam em `snippets.framework.*`.
+    -- Recebem (fw, ...) — `fw` é o FWData (pode chamar fw.getPlayer, etc.).
+    functions = {
+        -- Exemplo: adiciona snippets.framework.getVip(source)
+        getVip = function(fw, source)
+            local player = fw.getPlayer(source)
+            return player.online and player.hasPermission('vip') or false
+        end,
+    },
+
+    -- Métodos de cada Player ONLINE. Recebem (player, ...).
+    -- `player.__original.<nome>` acessa o método original (nil se for método novo).
+    player = {
+        -- Exemplo: sobrescreve giveItem estendendo o original
+        giveItem = function(player, item, amount, notify)
+            -- ...sua lógica antes...
+            local ok = player.__original.giveItem(item, amount, notify)
+            -- ...sua lógica depois...
+            return ok
+        end,
+
+        -- Exemplo: adiciona um método novo
+        isStaff = function(player)
+            return player.isAdmin() or player.hasPermission('mod')
+        end,
+    },
+}

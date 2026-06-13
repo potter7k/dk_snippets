@@ -1,162 +1,79 @@
-# 🚀 DK Snippets
+# dk_snippets
 
-[![FiveM](https://img.shields.io/badge/FiveM-Resource-blue)](https://fivem.net/)
-[![Version](https://img.shields.io/badge/version-1.2.0-green)](https://github.com/potter7k/dk_snippets)
-[![Discord](https://img.shields.io/badge/Discord-Join-7289da)](https://discord.gg/NJjUn8Ad3P)
+Biblioteca de utilitários para FiveM da DK Development. A partir da **v3.0.0** o
+recurso usa um **ponto de entrada único** via `require`, com módulos carregados
+sob demanda.
 
-**DK Snippets** é uma biblioteca completa e moderna para FiveM que oferece ferramentas essenciais para o desenvolvimento de scripts, incluindo:
+> **Breaking change (2.x → 3.0.0):** os globais (`DkNotify`, `Class`, `JSON`,
+> `SQL`/`DB`, `Framework`, `table.map`, `ParseInt`, ...) e os exports nativos
+> (`exports.dk_snippets:framework/DB/request`) **foram removidos**. O consumo
+> agora é exclusivamente via `require '@dk_snippets/snippets'`. Veja
+> [INSTALLATION.md](INSTALLATION.md) para migrar.
 
-- 🎯 **Framework Detection**: Identificação automática e inteligente de frameworks (vRP, ESX, etc)
-- 🗄️ **Database Operations**: Suporte completo para múltiplos drivers SQL (oxmysql, ghmattimysql, mysql-async)
-- 📄 **JSON File Handler**: Manipulação avançada de arquivos JSON com métodos CRUD
-- 🔄 **Callback System**: Sistema robusto de callbacks entre client e server
-- ⏱️ **Cooldown Manager**: Gerenciamento inteligente de cooldowns
-- 🎨 **UI Components**: Sistema de notificações, hints e requests customizáveis
-- 🛠️ **Utility Functions**: Coleção de funções auxiliares para desenvolvimento
+## Uso rápido
 
-## 📋 Índice
+No `fxmanifest.lua` do seu recurso:
 
-- [Instalação](#-instalação)
-- [Recursos](#-recursos)
-- [Documentação](#-documentação)
-- [Exemplos de Uso](#-exemplos-de-uso)
-- [Suporte](#-suporte)
-- [Contribuindo](#-contribuindo)
-- [Licença](#-licença)
-
-## 📦 Instalação
-
-1. Faça o download ou clone este repositório
-2. Coloque a pasta `dk_snippets` em `resources/[dk]/`
-3. Adicione ao seu `server.cfg`:
-```cfg
-ensure dk_snippets
+```lua
+dependencies { 'dk_snippets' }
+shared_script '@dk_snippets/init.lua'
 ```
 
-**Requisitos:**
-- FiveM Server atualizado
-- Um driver SQL (oxmysql, ghmattimysql, ou mysql-async) - apenas se for usar o módulo de database
+No código:
 
-## ✨ Recursos
-
-### 🎯 Framework Detection
-Detecta automaticamente o framework do servidor e fornece funções padronizadas:
 ```lua
-local frameworkName, FW = exports["dk_snippets"]:framework()
-local user = FW.getPlayer(source)
-local user_id = user.userId()
-local isAdmin = user.isAdmin()
-```
+---@type dk.snippets
+local snippets = require '@dk_snippets/snippets'
 
-### 🗄️ Database Operations
-Interface unificada para operações de banco de dados:
-```lua
-local db = exports["dk_snippets"]:DB()
-local users = db.execute("SELECT * FROM users WHERE age > ?", {25})
-db.insert("users", {name = "John", age = 30})
-```
-
-### 📄 JSON File Handler
-Manipule arquivos JSON como se fossem bancos de dados:
-```lua
-local jsonData = JSON:fetch("data/users")
-jsonData:insert("users", {name = "Alice", age = 25})
-local users = jsonData:where("users", {age = 30})
-```
-
-### 🔄 Callback System
-Comunicação simplificada entre client e server:
-```lua
--- Server
-RegisterServerCallback('getData', function(source, param)
-    return someData
-end)
-
--- Client
-local data = TriggerServerCallback('getData', {param})
-```
-
-### 🎨 UI Components
-
-**Notificações:**
-```lua
-DkNotify("green", "Operação realizada!", 5000)
-```
-
-**Hints:**
-```lua
-TriggerEvent('dk/hint', "create", "hint_id", "Pressione E para interagir", "E")
-```
-
-**Requests:**
-```lua
-local accept = exports["dk_snippets"]:request("Você aceita?", 20, "Sim", "Não")
-```
-
-## 📚 Documentação
-
-A documentação completa está organizada nos seguintes arquivos:
-
-- **[📖 INSTALLATION.md](INSTALLATION.md)** - Guia detalhado de instalação e configuração
-- **[💻 CLIENT.md](dk_snippets/src/client/CLIENT.md)** - Documentação das funções client-side
-- **[🖥️ SERVER.md](dk_snippets/src/server/SERVER.md)** - Documentação das funções server-side
-- **[🔄 SHARED.md](dk_snippets/src/shared/SHARED.md)** - Documentação das funções compartilhadas
-- **[🎓 EXAMPLES.md](EXAMPLES.md)** - Exemplos práticos de uso
-- **[🏗️ FRAMEWORK.md](dk_snippets/src/server/framework/FRAMEWORK.md)** - Guia de frameworks
-
-## 🎓 Exemplos de Uso
-
-### Exemplo Completo: Sistema de Admin Check
-```lua
--- Server-side
-local frameworkName, FW = exports["dk_snippets"]:framework()
-
-RegisterServerCallback('checkAdminStatus', function(source)
-    local user = FW.getPlayer(source)
-    if not user then return nil end
-    
-    return user.isAdmin()
-end)
-
--- Client-side
-local isAdmin = TriggerServerCallback('checkAdminStatus', {})
-if isAdmin then
-    DkNotify("green", "Você é um administrador!", 5000)
-else
-    DkNotify("red", "Acesso negado!", 5000)
+snippets.notify.send(src, 'green', 'Bem-vindo!')      -- server (com source)
+local player = snippets.framework.getPlayer(src)
+if player.online then
+    player.notify('green', 'Compra efetuada!')        -- açúcar: já sabe a source
 end
 ```
 
-Veja mais exemplos em **[EXAMPLES.md](EXAMPLES.md)**
+## Módulos disponíveis
 
-## 💬 Suporte
+Acessados via `snippets.<modulo>` (carregados sob demanda na primeira utilização).
 
-- 🎮 **Discord**: [https://discord.gg/NJjUn8Ad3P](https://discord.gg/NJjUn8Ad3P)
+| Módulo | Lado | Descrição |
+|---|---|---|
+| `snippets.table` | shared | `map`, `find`, `slice`, `count`, `indexOf`, `contains`, `forEach` (isolados; não tocam a `table` nativa) |
+| `snippets.string` | shared | `Split`, `Sanitize`, `Join`, `ParseFormat`, `Match`, `Dump` |
+| `snippets.number` | shared | `ParseInt`, `Round` |
+| `snippets.class` | shared | `class(defaults, parent?)` — classes com herança |
+| `snippets.cooldown` | shared | classe `Cooldown` |
+| `snippets.callbacks` | shared | `RegisterServerCallback`, `TriggerClientCallback`, etc. (popula só o lado atual) |
+| `snippets.notify` | shared | `notify.send(...)`, `notify.hint(...)`, `notify.modes` |
+| `snippets.request` | shared | callable lado-ciente; server dispara confirmação no client |
+| `snippets.json` | server | classe `JSON` para persistência em arquivo |
+| `snippets.db` | server | `db()` retorna a interface `SQL` (detecta oxmysql/ghmatti/mysql-async) |
+| `snippets.framework` | server | `FWData` do framework detectado (`getPlayer`, `getPlayerById`, `getPlayersByPermission`, `getFramework`) |
 
-## 🤝 Contribuindo
+### Açúcar no `Player`
 
-Contribuições são muito bem-vindas! Para contribuir:
+Todo `Player` **online** retornado pelo framework ganha métodos que já conhecem a
+source:
 
-1. Fork o projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/MinhaFeature`)
-3. Commit suas mudanças (`git commit -m 'Adiciona MinhaFeature'`)
-4. Push para a branch (`git push origin feature/MinhaFeature`)
-5. Abra um Pull Request
+```lua
+player.notify(mode, message, duration?)
+player.hint(action, id, description, control?, configs?)
+player.request(description, timer?, acceptText?, denyText?) -- retorna boolean
+```
 
-Por favor, siga os padrões de código existentes e documente suas mudanças.
+Em jogadores offline (`online == false`) esses métodos não existem.
 
-## 📄 Licença
+## Frameworks suportados
 
-Este projeto está sob a licença MIT. Veja o arquivo LICENSE para mais detalhes.
+Detecção automática e carregamento sob demanda (somente o framework ativo é
+carregado): **ESX**, **QBCore**, **vRP** (variantes crnetwork, crv3, crv5, vrpex) e
+fallback **sem framework**.
 
-O sistema de callbacks é baseado na implementação de [PiterMcFlebor](https://github.com/pitermcflebor/pmc-callbacks).
+## Documentação
+
+- [INSTALLATION.md](INSTALLATION.md) — instalação e migração
+- [EXAMPLES.md](EXAMPLES.md) — exemplos por módulo
 
 ---
 
-<div align="center">
-
-**Desenvolvido por [DK Development](https://discord.gg/NJjUn8Ad3P)**
-
-Se este projeto foi útil, considere deixar uma ⭐!
-
-</div>
+Discord: https://discord.gg/NJjUn8Ad3P

@@ -1,0 +1,4 @@
+# Customizações de framework do usuário — não versionar.
+# Os templates .example são versionados; o usuário copia para .lua e edita.
+modules/server/framework/custom/*.lua
+!modules/server/framework/custom/*.lua.example
