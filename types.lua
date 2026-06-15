@@ -77,7 +77,8 @@ function class:constructor(...) end
 ---@field number dk.number        # ParseInt / Round
 ---@field class dk.class          # construtor de classes com herança
 ---@field cooldown Cooldown       # classe de cooldown (use :new(segundos))
----@field callbacks dk.callbacks  # callbacks client<->server
+---@field callbacks dk.callbacks  # callbacks client<->server (API base/compat)
+---@field callback dk.callback    # callbacks client<->server (API enxuta, recomendada)
 ---@field notify dk.notify        # notify/hint (lado-ciente)
 ---@field request dk.request      # confirmação com UI (lado-ciente)
 ---@field json JSON               # storage JSON em arquivo (server-only)

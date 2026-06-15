@@ -5,7 +5,7 @@ author 'potter7k'
 description 'Scripts desenvolvidos por DK Development. Discord: https://discord.gg/NJjUn8Ad3P'
 
 lua54 'yes'
-version '3.0.0'
+version '3.1.0'
 
 ui_page 'web/index.html'
 

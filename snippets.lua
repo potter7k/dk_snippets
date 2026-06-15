@@ -6,7 +6,8 @@ local map = {
     number    = 'modules/shared/number',
     class     = 'modules/shared/class',
     cooldown  = 'modules/shared/cooldown',
-    callbacks = 'modules/shared/callbacks',
+    callbacks = 'modules/shared/callbacks', -- API base (compat/encriptados)
+    callback  = 'modules/shared/callback',  -- API enxuta (recomendada)
     notify    = 'modules/shared/notify',
     request   = 'modules/shared/request',
     -- server

@@ -4,7 +4,9 @@
 --   shared_scripts { '@dk_snippets/compat/dk_snippets_compat.lua' }  -- (primeiro script)
 -- Autocontido: não usa require/init.lua. Depende apenas dos eventos dk/notify e dk/hint
 -- e dos exports legados request/framework/DB (runtime/*/legacy_exports.lua).
--- NÃO EDITAR manualmente — regenerar a partir do dk_snippets 2.x se necessário.
+-- A seção de callbacks espelha modules/shared/callbacks.lua (v3): mesmo wire protocol,
+-- então um peer que use este shim conversa com outro que use o módulo. Ao mexer em
+-- callbacks, altere os DOIS lados juntos. As demais seções são portadas do 2.x.
 -- Spec: docs/superpowers/specs/2026-06-10-dk-snippets-compat-encriptados-design.md
 -- ========== [2.x] src/shared/utils.lua ==========
 ---@enum NotifyModes
@@ -369,10 +371,11 @@ function Dump(value, depth, key)
 end
 
 --- Count the number of elements in a table.
----@param self table
+---@param self table?
 ---@return integer
 ---@diagnostic disable-next-line: duplicate-set-field
 function table.count(self)
+	if self == nil then return 0 end
 	local count = 0
 
 	for _, _ in pairs(self) do
@@ -383,11 +386,15 @@ function table.count(self)
 end
 
 --- Map a function to each element in a table and optionally prevent indexing.
----@param self table
+---@param self table?
 ---@param func function
 ---@param preventIndex? boolean
 ---@return table
 function table.map(self, func, preventIndex)
+	-- `self` nil é tratado como tabela vazia: consumidores (inclusive scripts
+	-- encriptados) repassam retornos de rede/callbacks que podem chegar nil, e o
+	-- core nunca deve quebrar por causa disso. Retorna {} em vez de iterar nil.
+	if self == nil then return {} end
 	preventIndex = preventIndex and true or false
 	local response = {}
 
@@ -413,11 +420,12 @@ function table.forEach(self, func)
 end
 
 --- Find elements in a table that match a function's criteria.
----@param self table
+---@param self table?
 ---@param func function
 ---@param keepIndex? boolean
 ---@return table
 function table.find(self, func, keepIndex)
+	if self == nil then return {} end
 	keepIndex = keepIndex and true or false
 	local ret = {}
 	for key, value in pairs(self) do
@@ -433,11 +441,12 @@ function table.find(self, func, keepIndex)
 end
 
 --- Extract a slice of a table from a start index to an end index.
----@param self table
+---@param self table?
 ---@param startIndex integer
 ---@param endIndex? integer
 ---@return table
 function table.slice(self, startIndex, endIndex)
+	if self == nil then return {} end
 	local ret = {}
 	local length = #self
 
@@ -484,75 +493,69 @@ function table.contains(self, value)
 	return table.indexOf(self, value) ~= nil
 end
 -- ========== [2.x] src/shared/callbacks.lua ==========
---[[ 
-    -- CREDITS:
-    https://github.com/pitermcflebor/pmc-callbacks
-]]
-
--- MIT License
--- Copyright (c) 2020 PiterMcFlebor
---
--- Permission is hereby granted, free of charge, to any person obtaining a copy
--- of this software and associated documentation files (the "Software"), to deal
--- in the Software without restriction, including without limitation the rights
--- to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
--- copies of the Software, and to permit persons to whom the Software is
--- furnished to do so, subject to the following conditions:
---
--- The above copyright notice and this permission notice shall be included in all
--- copies or substantial portions of the Software.
---
--- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
--- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
--- FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
--- AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
--- LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
--- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
--- SOFTWARE.
+-- Callbacks request/response client<->server. Popula globais (_G.*) no contexto do
+-- consumidor encriptado. Wire protocol idêntico ao módulo v3
+-- (modules/shared/callbacks.lua) — os dois lados conversam entre si, inclusive o
+-- ticket ecoado em client→server. NÃO alterar nomes/formato dos eventos dk__*.
 
 local IS_SERVER = IsDuplicityVersion()
 local table_unpack = table.unpack
-local debug = debug
 local debug_getinfo = debug.getinfo
-local msgpack = msgpack
 local msgpack_pack = msgpack.pack
 local msgpack_unpack = msgpack.unpack
-local msgpack_pack_args = msgpack.pack_args
-local PENDING = 0
-local REJECTING = 2
-local REJECTED = 4
+local GetGameTimer = GetGameTimer
+local PENDING, REJECTING, REJECTED = 0, 2, 4
 
-local function ensure(obj, typeof, opt_typeof, errMessage)
+local function ensure(obj, typeof, opt_typeof)
 	local objtype = type(obj)
-	local di = debug_getinfo(2)
-	local diName = di.name or 'unknown'
-	local errMessage = errMessage or (opt_typeof == nil and ((diName) .. ' expected %s, but got %s') or ((diName) .. ' expected %s or %s, but got %s'))
-	if typeof ~= 'function' then
-		if objtype ~= typeof and objtype ~= opt_typeof then
-			error((errMessage):format(typeof, (opt_typeof == nil and objtype or opt_typeof), objtype))
-		end
-	else
+	local name = debug_getinfo(2).name or 'unknown'
+	if typeof == 'function' then
 		if objtype == 'table' and not rawget(obj, '__cfx_functionReference') then
-			error((errMessage):format(typeof, (opt_typeof == nil and objtype or opt_typeof), objtype))
+			error(('%s expected function, but got %s'):format(name, objtype))
 		end
+		return
 	end
+	if objtype ~= typeof and objtype ~= opt_typeof then
+		error(('%s expected %s%s, but got %s'):format(
+			name, typeof, opt_typeof and (' or ' .. opt_typeof) or '', objtype))
+	end
+end
+
+-- Dispara timedout na expiração e roda cleanup uma vez.
+local function scheduleTimeout(prom, timeout, timedout, onExpire)
+	if not (timeout and timedout) then return end
+	SetTimeout(timeout * 1000, function()
+		local state = prom.state ---@diagnostic disable-line: undefined-field
+		if state == PENDING or state == REJECTING or state == REJECTED then
+			timedout(state)
+			if state == PENDING then prom:reject() end
+			if onExpire then onExpire() end
+		end
+	end)
 end
 
 if IS_SERVER then
 	_G.RegisterServerCallback = function(eventName, eventCallback)
 		ensure(eventName, 'string'); ensure(eventCallback, 'function')
 
-		local eventCallback = eventCallback
-		local eventName = eventName
-		local eventData = RegisterNetEvent('dk__server_callback:'..eventName, function(packed, src, cb)
-			local source = tonumber(source)
-			if not source then
-				cb( msgpack_pack_args( eventCallback(src, table_unpack(msgpack_unpack(packed)) ) ) )
+		return RegisterNetEvent('dk__server_callback:'..eventName, function(packed, src, cb) ---@diagnostic disable-line: missing-return
+			local netSource = source
+			-- args empacotado no produtor com pack(argsTable); unpack devolve a tabela
+			-- diretamente. NÃO envolver em { } (adicionava nível extra → fn recebia {arg}).
+			local args = msgpack_unpack(packed) or {}
+			if cb then
+				-- chamada local (server→server): src e cb explícitos.
+				-- Empacota a LISTA de retornos com pack({...}) (ver nota em
+				-- RegisterClientCallback): pack_args/unpack são assimétricos e geravam
+				-- um nível extra de aninhamento no retorno.
+				cb(msgpack_pack({ eventCallback(src, table_unpack(args)) }))
 			else
-				TriggerClientEvent(('dk__client_callback_response:%s:%s'):format(eventName, source), source, msgpack_pack_args( eventCallback(source, table_unpack(msgpack_unpack(packed)) ) ))
+				-- chamada de rede: src é o ticket (string) ou nil
+				local ret = msgpack_pack({ eventCallback(netSource, table_unpack(args)) })
+				TriggerClientEvent(('dk__client_callback_response:%s:%s'):format(eventName, netSource),
+					netSource, ret, src) -- ecoa o ticket
 			end
 		end)
-		return eventData
 	end
 
 	_G.UnregisterServerCallback = function(eventData)
@@ -561,47 +564,28 @@ if IS_SERVER then
 
 	_G.TriggerClientCallback = function(source, eventName, args, eventCallback, timeout, timedout)
 		ensure(source, 'string', 'number'); ensure(eventName, 'string'); ensure(args, 'table', 'nil'); ensure(timeout, 'number', 'nil'); ensure(timedout, 'function', 'nil'); ensure(eventCallback, 'function', 'nil')
-		if tonumber(source) >= 0 then
-			local ticket = tostring(source) .. 'x' .. tostring(GetGameTimer())
-			local prom = promise.new()
-			local eventCallback = eventCallback
-			local eventHandlerRemoved = false
-			local eventData = RegisterNetEvent(('dk__callback_retval:%s:%s:%s'):format(source, eventName, ticket), function(packed)
-				if eventCallback and prom.state == PENDING then eventCallback( table_unpack(msgpack_unpack(packed)) ) end
-				prom:resolve( table_unpack(msgpack_unpack(packed)) )
-			end)
+		if tonumber(source) < 0 then error 'source should be equal too or higher than 0' end
 
-			local function safeRemoveEventHandler()
-				if not eventHandlerRemoved and eventData then
-					eventHandlerRemoved = true
-					RemoveEventHandler(eventData)
-				end
-			end
+		local ticket = ('%s:%d'):format(source, GetGameTimer())
+		local prom = promise.new()
+		local removed = false
+		local eventData = RegisterNetEvent(('dk__callback_retval:%s:%s:%s'):format(source, eventName, ticket), function(packed)
+			if prom.state ~= PENDING then return end
+			local ret = msgpack_unpack(packed) or {}
+			if eventCallback then eventCallback(table_unpack(ret)) end
+			prom:resolve(table_unpack(ret))
+		end)
+		local function cleanup()
+			if not removed then removed = true; RemoveEventHandler(eventData) end
+		end
 
-			TriggerClientEvent(('dk__client_callback:%s'):format(eventName), source, msgpack_pack(args or {}), ticket)
+		TriggerClientEvent(('dk__client_callback:%s'):format(eventName), source, msgpack_pack(args or {}), ticket)
 
-			if timeout ~= nil and timedout then
-				local timedout = timedout
-				SetTimeout(timeout * 1000, function()
-					if
-						prom.state == PENDING or
-						prom.state == REJECTED or
-						prom.state == REJECTING
-					then
-						timedout(prom.state)
-						if prom.state == PENDING then prom:reject() end
-						safeRemoveEventHandler()
-					end
-				end)
-			end
-
-			if not eventCallback then
-				local result = Citizen.Await(prom)
-				safeRemoveEventHandler()
-				return result
-			end
-		else
-			error 'source should be equal too or higher than 0'
+		scheduleTimeout(prom, timeout, timedout, cleanup)
+		if not eventCallback then
+			local result = { Citizen.Await(prom) }
+			cleanup()
+			return table_unpack(result)
 		end
 	end
 
@@ -609,97 +593,99 @@ if IS_SERVER then
 		ensure(source, 'string', 'number'); ensure(eventName, 'string'); ensure(args, 'table', 'nil'); ensure(timeout, 'number', 'nil'); ensure(timedout, 'function', 'nil'); ensure(eventCallback, 'function', 'nil')
 
 		local prom = promise.new()
-		local eventCallback = eventCallback
-		local eventName = eventName
-		TriggerEvent('dk__server_callback:'..eventName, msgpack_pack(args or {}), source,
-		function(packed)
-			if eventCallback and prom.state == PENDING then eventCallback( table_unpack(msgpack_unpack(packed)) ) end
-			prom:resolve( table_unpack(msgpack_unpack(packed)) )
+		TriggerEvent('dk__server_callback:'..eventName, msgpack_pack(args or {}), source, function(packed)
+			if prom.state ~= PENDING then return end
+			local ret = msgpack_unpack(packed) or {}
+			if eventCallback then eventCallback(table_unpack(ret)) end
+			prom:resolve(table_unpack(ret))
 		end)
 
-		if timeout ~= nil and timedout then
-			local timedout = timedout
-			SetTimeout(timeout * 1000, function()
-				if
-					prom.state == PENDING or
-					prom.state == REJECTED or
-					prom.state == REJECTING
-				then
-					timedout(prom.state)
-					if prom.state == PENDING then prom:reject() end
-				end
-			end)
-		end
-
-		if not eventCallback then
-			return Citizen.Await(prom)
-		end
+		scheduleTimeout(prom, timeout, timedout)
+		if not eventCallback then return Citizen.Await(prom) end
 	end
 end
 
 if not IS_SERVER then
-	local SERVER_ID = GetPlayerServerId(PlayerId())
+	-- O server id NÃO pode ser cacheado no load do recurso: como shared_script, este
+	-- arquivo roda antes do player ter um id de sessão válido (GetPlayerServerId devolve
+	-- -1/0 nesse instante). Cachear cedo faz o net event de resposta ser registrado com
+	-- o id errado (ex.: '...:-1'), e o server responde para '...:<idReal>' — os nomes não
+	-- casam, a resposta se perde e o callback bloqueia para sempre. Resolvemos lazy: só
+	-- fixa o id quando ele já é válido (> 0).
+	local cachedServerId = nil
+	local function getServerId()
+		if cachedServerId then return cachedServerId end
+		local id = GetPlayerServerId(PlayerId())
+		if id and id > 0 then cachedServerId = id end
+		return id
+	end
 
 	_G.RegisterClientCallback = function(eventName, eventCallback)
 		ensure(eventName, 'string'); ensure(eventCallback, 'function')
-		
-		local eventCallback = eventCallback
-		local eventName = eventName
-		local eventData = RegisterNetEvent('dk__client_callback:'..eventName, function(packed, ticket)
+
+		return RegisterNetEvent('dk__client_callback:'..eventName, function(packed, ticket)
+			-- args: unpack devolve a tabela de args; table_unpack espalha. ret: pack({...})
+			-- (lista de retornos). pack_args/unpack eram assimétricos e geravam nível extra.
+			local ret = msgpack_pack({ eventCallback(table_unpack(msgpack_unpack(packed) or {})) })
 			if type(ticket) == 'function' then
-				ticket( msgpack_pack_args( eventCallback( table_unpack(msgpack_unpack(packed)) ) ) )
+				ticket(ret)
 			else
-				TriggerServerEvent(('dk__callback_retval:%s:%s:%s'):format(SERVER_ID, eventName, ticket), msgpack_pack_args( eventCallback( table_unpack(msgpack_unpack(packed)) ) ))
+				TriggerServerEvent(('dk__callback_retval:%s:%s:%s'):format(getServerId(), eventName, ticket), ret)
 			end
 		end)
-		return eventData
 	end
 
 	_G.UnregisterClientCallback = function(eventData)
 		RemoveEventHandler(eventData)
 	end
 
+	-- Handler persistente por eventName, roteia respostas por ticket. Evita colisão
+	-- entre chamadas concorrentes ao mesmo callback (falha da versão antiga).
+	-- O entry só é cacheado quando o server id já é válido: o nome do net event de
+	-- resposta embute o id, então registrá-lo cedo (id -1) deixaria o handler surdo
+	-- para sempre. Enquanto o id não vale, recriamos o handler a cada chamada.
+	local pendingByEvent = {}
+	local function ensureResponseHandler(eventName)
+		local entry = pendingByEvent[eventName]
+		if entry then return entry end
+		local serverId = getServerId()
+		entry = { tickets = {} }
+		entry.handle = RegisterNetEvent(('dk__client_callback_response:%s:%s'):format(eventName, serverId), function(packed, ticket)
+			local tickets = entry.tickets
+			local slot = ticket and tickets[ticket]
+			if not slot then ticket, slot = next(tickets) end
+			if not slot then return end
+			tickets[ticket] = nil
+			-- ret é a lista de retornos (empacotada com pack({...})); table_unpack devolve
+			-- os valores na ordem original.
+			local ret = msgpack_unpack(packed) or {}
+			if slot.cb then slot.cb(table_unpack(ret)) end
+			slot.prom:resolve(table_unpack(ret))
+		end)
+		-- Só memoiza quando o id é válido; com id inválido o handler nasce surdo e
+		-- precisa ser refeito na próxima chamada (quando o id já estiver disponível).
+		if serverId and serverId > 0 then
+			pendingByEvent[eventName] = entry
+		end
+		return entry
+	end
+
 	_G.TriggerServerCallback = function(eventName, args, eventCallback, timeout, timedout)
 		ensure(args, 'table', 'nil'); ensure(eventName, 'string'); ensure(timeout, 'number', 'nil'); ensure(timedout, 'function', 'nil'); ensure(eventCallback, 'function', 'nil')
-		
+
+		local entry = ensureResponseHandler(eventName)
+		local ticket = ('%d:%d'):format(getServerId(), GetGameTimer())
 		local prom = promise.new()
-		local eventCallback = eventCallback
-		local eventHandlerRemoved = false
-		local eventData = RegisterNetEvent(('dk__client_callback_response:%s:%s'):format(eventName, SERVER_ID),
-		function(packed)
-			if eventCallback and prom.state == PENDING then eventCallback( table_unpack(msgpack_unpack(packed)) ) end
-			prom:resolve( table_unpack(msgpack_unpack(packed)) )
+		entry.tickets[ticket] = { prom = prom, cb = eventCallback }
+		local function cleanup() entry.tickets[ticket] = nil end
 
-		end)
+		TriggerServerEvent('dk__server_callback:'..eventName, msgpack_pack(args or {}), ticket)
 
-		local function safeRemoveEventHandler()
-			if not eventHandlerRemoved and eventData then
-				eventHandlerRemoved = true
-				RemoveEventHandler(eventData)
-			end
-		end
-
-		TriggerServerEvent('dk__server_callback:'..eventName, msgpack_pack( args ))
-
-		if timeout ~= nil and timedout then
-			local timedout = timedout
-			SetTimeout(timeout * 1000, function()
-				if
-					prom.state == PENDING or
-					prom.state == REJECTED or
-					prom.state == REJECTING
-				then
-					timedout(prom.state)
-					if prom.state == PENDING then prom:reject() end
-					safeRemoveEventHandler()
-				end
-			end)
-		end
-
+		scheduleTimeout(prom, timeout, timedout, cleanup)
 		if not eventCallback then
-			local result = Citizen.Await(prom)
-			safeRemoveEventHandler()
-			return result
+			local result = { Citizen.Await(prom) }
+			cleanup()
+			return table_unpack(result)
 		end
 	end
 
@@ -707,32 +693,15 @@ if not IS_SERVER then
 		ensure(eventName, 'string'); ensure(args, 'table', 'nil'); ensure(timeout, 'number', 'nil'); ensure(timedout, 'function', 'nil'); ensure(eventCallback, 'function', 'nil')
 
 		local prom = promise.new()
-		local eventCallback = eventCallback
-		local eventName = eventName
-		TriggerEvent('dk__client_callback:'..eventName, msgpack_pack(args or {}),
-		function(packed)
-			if eventCallback and prom.state == PENDING then eventCallback( table_unpack(msgpack_unpack(packed)) ) end
-			prom:resolve( table_unpack(msgpack_unpack(packed)) )
+		TriggerEvent('dk__client_callback:'..eventName, msgpack_pack(args or {}), function(packed)
+			if prom.state ~= PENDING then return end
+			local ret = msgpack_unpack(packed) or {}
+			if eventCallback then eventCallback(table_unpack(ret)) end
+			prom:resolve(table_unpack(ret))
 		end)
 
-		-- timeout response
-		if timeout ~= nil and timedout then
-			local timedout = timedout
-			SetTimeout(timeout * 1000, function()
-				if
-					prom.state == PENDING or
-					prom.state == REJECTED or
-					prom.state == REJECTING
-				then
-					timedout(prom.state)
-					if prom.state == PENDING then prom:reject() end
-				end
-			end)
-		end
-
-		if not eventCallback then
-			return Citizen.Await(prom)
-		end
+		scheduleTimeout(prom, timeout, timedout)
+		if not eventCallback then return Citizen.Await(prom) end
 	end
 end
 -- ========== [2.x] src/shared/cooldowns.lua ==========
