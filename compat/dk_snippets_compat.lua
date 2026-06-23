@@ -538,7 +538,10 @@ if IS_SERVER then
 	_G.RegisterServerCallback = function(eventName, eventCallback)
 		ensure(eventName, 'string'); ensure(eventCallback, 'function')
 
-		return RegisterNetEvent('dk__server_callback:'..eventName, function(packed, src, cb) ---@diagnostic disable-line: missing-return
+		-- RegisterNetEvent só libera o nome em rede (não devolve handle removível); o
+		-- cookie aceito por RemoveEventHandler vem de AddEventHandler.
+		RegisterNetEvent('dk__server_callback:'..eventName)
+		return AddEventHandler('dk__server_callback:'..eventName, function(packed, src, cb) ---@diagnostic disable-line: missing-return
 			local netSource = source
 			-- args empacotado no produtor com pack(argsTable); unpack devolve a tabela
 			-- diretamente. NÃO envolver em { } (adicionava nível extra → fn recebia {arg}).
@@ -559,7 +562,8 @@ if IS_SERVER then
 	end
 
 	_G.UnregisterServerCallback = function(eventData)
-		RemoveEventHandler(eventData)
+		-- eventData nil/inválido faz RemoveEventHandler lançar "Invalid event data".
+		if eventData then RemoveEventHandler(eventData) end
 	end
 
 	_G.TriggerClientCallback = function(source, eventName, args, eventCallback, timeout, timedout)
@@ -569,14 +573,20 @@ if IS_SERVER then
 		local ticket = ('%s:%d'):format(source, GetGameTimer())
 		local prom = promise.new()
 		local removed = false
-		local eventData = RegisterNetEvent(('dk__callback_retval:%s:%s:%s'):format(source, eventName, ticket), function(packed)
+		-- AddEventHandler (não RegisterNetEvent) devolve o handle aceito por
+		-- RemoveEventHandler; RegisterNetEvent apenas libera o nome em rede.
+		local evName = ('dk__callback_retval:%s:%s:%s'):format(source, eventName, ticket)
+		RegisterNetEvent(evName)
+		local eventData = AddEventHandler(evName, function(packed)
 			if prom.state ~= PENDING then return end
 			local ret = msgpack_unpack(packed) or {}
 			if eventCallback then eventCallback(table_unpack(ret)) end
 			prom:resolve(table_unpack(ret))
 		end)
 		local function cleanup()
-			if not removed then removed = true; RemoveEventHandler(eventData) end
+			-- eventData (cookie do AddEventHandler) pode vir nil em certos timings do
+			-- runtime; RemoveEventHandler(nil) lança "Invalid event data" (commit 66688c4).
+			if not removed and eventData then removed = true; RemoveEventHandler(eventData) end
 		end
 
 		TriggerClientEvent(('dk__client_callback:%s'):format(eventName), source, msgpack_pack(args or {}), ticket)
@@ -623,7 +633,9 @@ if not IS_SERVER then
 	_G.RegisterClientCallback = function(eventName, eventCallback)
 		ensure(eventName, 'string'); ensure(eventCallback, 'function')
 
-		return RegisterNetEvent('dk__client_callback:'..eventName, function(packed, ticket)
+		-- handle removível vem de AddEventHandler; RegisterNetEvent só libera o nome.
+		RegisterNetEvent('dk__client_callback:'..eventName)
+		return AddEventHandler('dk__client_callback:'..eventName, function(packed, ticket)
 			-- args: unpack devolve a tabela de args; table_unpack espalha. ret: pack({...})
 			-- (lista de retornos). pack_args/unpack eram assimétricos e geravam nível extra.
 			local ret = msgpack_pack({ eventCallback(table_unpack(msgpack_unpack(packed) or {})) })
@@ -636,7 +648,8 @@ if not IS_SERVER then
 	end
 
 	_G.UnregisterClientCallback = function(eventData)
-		RemoveEventHandler(eventData)
+		-- eventData nil/inválido faz RemoveEventHandler lançar "Invalid event data".
+		if eventData then RemoveEventHandler(eventData) end
 	end
 
 	-- Handler persistente por eventName, roteia respostas por ticket. Evita colisão
@@ -650,7 +663,10 @@ if not IS_SERVER then
 		if entry then return entry end
 		local serverId = getServerId()
 		entry = { tickets = {} }
-		entry.handle = RegisterNetEvent(('dk__client_callback_response:%s:%s'):format(eventName, serverId), function(packed, ticket)
+		-- handle removível vem de AddEventHandler; RegisterNetEvent só libera o nome.
+		local respName = ('dk__client_callback_response:%s:%s'):format(eventName, serverId)
+		RegisterNetEvent(respName)
+		entry.handle = AddEventHandler(respName, function(packed, ticket)
 			local tickets = entry.tickets
 			local slot = ticket and tickets[ticket]
 			if not slot then ticket, slot = next(tickets) end

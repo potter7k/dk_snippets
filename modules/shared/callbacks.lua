@@ -86,7 +86,11 @@ if IS_SERVER then
     function M.RegisterServerCallback(eventName, fn)
         ensure(eventName, 'string'); ensure(fn, 'function')
 
-        return RegisterNetEvent('dk__server_callback:' .. eventName, function(packed, src, cb)
+        -- RegisterNetEvent só faz o allow-list do nome (não devolve handle removível).
+        -- O cookie aceito por RemoveEventHandler vem de AddEventHandler — por isso
+        -- registramos o nome e anexamos o handler em chamadas separadas.
+        RegisterNetEvent('dk__server_callback:' .. eventName)
+        return AddEventHandler('dk__server_callback:' .. eventName, function(packed, src, cb)
             -- `source` (global do CitizenFX) > 0 quando vem da rede; nil/0 quando é
             -- uma chamada server→server local, que passa `src` e `cb` explícitos.
             local netSource = source
@@ -115,7 +119,8 @@ if IS_SERVER then
     --- (server) Remove um callback registrado.
     ---@param handle table
     function M.UnregisterServerCallback(handle)
-        RemoveEventHandler(handle)
+        -- handle nil/inválido faz RemoveEventHandler lançar "Invalid event data".
+        if handle then RemoveEventHandler(handle) end
     end
 
     --- (server) Aciona um callback registrado num client.
@@ -138,18 +143,23 @@ if IS_SERVER then
         local ticket = ('%s:%d'):format(source, gameTimer())
         local prom = promise.new()
 
-        local handle = RegisterNetEvent(
-            ('dk__callback_retval:%s:%s:%s'):format(source, eventName, ticket),
-            function(packed)
-                if prom.state ~= PENDING then return end
-                local ret = unpackMsg(packed) or {} -- lista de retornos (pack({...}))
-                if eventCallback then eventCallback(unpack(ret)) end
-                prom:resolve(unpack(ret))
-            end)
+        -- AddEventHandler (não RegisterNetEvent) devolve o handle que RemoveEventHandler
+        -- aceita; RegisterNetEvent apenas libera o nome para uso em rede.
+        local evName = ('dk__callback_retval:%s:%s:%s'):format(source, eventName, ticket)
+        RegisterNetEvent(evName)
+        local handle = AddEventHandler(evName, function(packed)
+            if prom.state ~= PENDING then return end
+            local ret = unpackMsg(packed) or {} -- lista de retornos (pack({...}))
+            if eventCallback then eventCallback(unpack(ret)) end
+            prom:resolve(unpack(ret))
+        end)
 
+        -- `handle` é o cookie devolvido por AddEventHandler. Em certos timings do
+        -- runtime ele pode vir nil; RemoveEventHandler(nil) lança "Invalid event data".
+        -- Guard duplo: só remove uma vez (removed) e só com handle válido (commit 66688c4).
         local removed = false
         local function cleanup()
-            if not removed then removed = true; RemoveEventHandler(handle) end
+            if not removed and handle then removed = true; RemoveEventHandler(handle) end
         end
 
         TriggerClientEvent('dk__client_callback:' .. eventName, source, pack(args or {}), ticket)
@@ -204,7 +214,9 @@ else
     function M.RegisterClientCallback(eventName, fn)
         ensure(eventName, 'string'); ensure(fn, 'function')
 
-        return RegisterNetEvent('dk__client_callback:' .. eventName, function(packed, ticket)
+        -- Ver nota em RegisterServerCallback: handle removível vem de AddEventHandler.
+        RegisterNetEvent('dk__client_callback:' .. eventName)
+        return AddEventHandler('dk__client_callback:' .. eventName, function(packed, ticket)
             -- args: unpackMsg devolve a tabela de args; unpack espalha. ret: pack({...})
             -- (lista de retornos). Ver nota em RegisterServerCallback sobre a assimetria.
             local ret = pack({ fn(unpack(unpackMsg(packed) or {})) })
@@ -221,7 +233,8 @@ else
     --- (client) Remove um callback registrado.
     ---@param handle table
     function M.UnregisterClientCallback(handle)
-        RemoveEventHandler(handle)
+        -- handle nil/inválido faz RemoveEventHandler lançar "Invalid event data".
+        if handle then RemoveEventHandler(handle) end
     end
 
     -- Um único handler persistente por eventName roteia as respostas do server por
@@ -242,9 +255,10 @@ else
         -- na próxima chamada (quando o id já estiver disponível, após o spawn).
         local serverId = getServerId()
         entry = { tickets = {} } ---@diagnostic disable-line: missing-fields
-        entry.handle = RegisterNetEvent(
-            ('dk__client_callback_response:%s:%s'):format(eventName, serverId),
-            function(packed, ticket)
+        -- handle removível vem de AddEventHandler; RegisterNetEvent só libera o nome.
+        local respName = ('dk__client_callback_response:%s:%s'):format(eventName, serverId)
+        RegisterNetEvent(respName)
+        entry.handle = AddEventHandler(respName, function(packed, ticket)
                 local tickets = entry.tickets
                 -- Roteia por ticket; se o peer (shim antigo) respondeu sem ticket,
                 -- resolve a primeira pendente — fallback seguro.
